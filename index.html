@@ -6,8 +6,8 @@
 <meta name="description" content="上傳講義或貼上文字，邊聽朗讀邊劃重點、挖空複習。文件只在你的裝置上處理。">
 <meta name="theme-color" content="#1E7563">
 <link rel="manifest" href="manifest.webmanifest">
-<link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
-<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="書伴">
@@ -252,6 +252,14 @@ mark sup::after{content:attr(data-k)}
 .hide{display:none!important}
 .pt-del{margin-left:6px}
 .install{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center;background:var(--accent-soft);color:var(--ink);border-radius:var(--r);padding:10px 14px;font-size:13.5px;margin-bottom:14px}
+.ai-tasks{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px}
+.ai-go{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px;margin:12px 0}
+.ai-go .btn{justify-content:center;padding:11px 12px;font-size:15px}
+.ai-q{width:100%;min-height:70px;border:1px solid var(--line);border-radius:8px;padding:8px 10px;background:var(--bg);resize:vertical;margin-bottom:4px}
+.ai-ok{background:var(--accent-soft);color:var(--ink);border-radius:8px;padding:10px 12px;font-size:14px;margin:8px 0}
+.ai-preview{font-size:13px;color:var(--muted);border:1px solid var(--line);border-radius:8px;padding:6px 10px}
+.ai-preview summary{cursor:pointer;color:var(--ink)}
+.ai-preview pre{white-space:pre-wrap;word-break:break-word;font:12.5px/1.6 var(--f-ui);max-height:220px;overflow:auto;margin:8px 0 2px}
 </style>
 </head>
 <body>
@@ -365,6 +373,7 @@ mark sup::after{content:attr(data-k)}
           <button role="tab" data-tab="explain" aria-selected="false" class="hide">逐步講解</button>
           <button role="tab" data-tab="quiz" aria-selected="false" class="hide">考考我</button>
           <button role="tab" data-tab="cloze" aria-selected="false">🧠 挖空複習</button>
+          <button role="tab" data-tab="ask" aria-selected="false">🤖 問 AI</button>
           <button role="tab" data-tab="overview" aria-selected="false" class="hide">全文導讀</button>
         </div>
       </div>
@@ -380,7 +389,7 @@ mark sup::after{content:attr(data-k)}
       </div>
     </section>
   </div>
-  <footer>書伴網頁 App・可安裝到手機桌面、離線也能讀已開過的功能。支援 PDF（含掃描檔）、Word（.docx）、PowerPoint（.pptx）、Excel（.xlsx / .csv）、EPUB、純文字與圖片。舊版 .doc / .ppt 請先另存成新版格式或 PDF。語音朗讀使用瀏覽器內建的聲音，音色依裝置而不同。</footer>
+  <footer>書伴網頁 App・「🤖 問 AI」會把指令和這一段原文複製起來，讓你貼到自己的 ChatGPT、Gemini 或 Claude。可安裝到手機桌面、離線也能讀已開過的功能。支援 PDF（含掃描檔）、Word（.docx）、PowerPoint（.pptx）、Excel（.xlsx / .csv）、EPUB、純文字與圖片。舊版 .doc / .ppt 請先另存成新版格式或 PDF。語音朗讀使用瀏覽器內建的聲音，音色依裝置而不同。</footer>
 </div>
 
 <script>
@@ -1102,7 +1111,7 @@ function go(i, silent) {
   const ni = Math.max(0, Math.min(S.doc.sections.length - 1, i));
   if (TTS.owner && TTS.owner.id !== "read") TTS.stop();
   if (TTS.owner && TTS.owner.id === "read" && ni !== S.idx && !silent) TTS.stop();
-  const changed = ni !== S.idx; S.idx = ni; S.reading = null;
+  const changed = ni !== S.idx; S.idx = ni; S.reading = null; if (changed) S.askDone = "";
   $("#secSel").value = S.idx;
   $("#prev").disabled = S.idx === 0;
   $("#next").disabled = S.idx === S.doc.sections.length - 1;
@@ -1220,7 +1229,7 @@ function md(src) {
 function setAI(st) {
   aiState = st;
   const el = $("#aiState");
-  el.className = "state " + (st === "ready" ? "ready" : st === "off" ? "off" : "");
+  el.className = "state hide " + (st === "ready" ? "ready" : st === "off" ? "off" : "");
   el.lastElementChild.textContent = st === "ready" ? "書伴已上線" : st === "off" ? "AI 無法使用" : "正在連線 Claude…";
   $("#noAI").hidden = true;
   $("#askBtn").disabled = st === "off";
@@ -1490,7 +1499,7 @@ const sayBtn = id => TTS.ok ? `<button class="icon-btn" type="button" data-say="
 function renderPane() {
   const pane = $("#pane"); if (!S.doc) { pane.innerHTML = ""; return; }
   const i = S.idx, n = note(i);
-  $("#compTitle").textContent = { chat: "和書伴聊這份文件", points: `第 ${i + 1} 段・劃重點`, explain: `第 ${i + 1} 段・逐步講解`, quiz: `第 ${i + 1} 段・考考我`, cloze: `第 ${i + 1} 段・挖空複習`, overview: "全文導讀" }[S.tab];
+  $("#compTitle").textContent = { ask: `第 ${i + 1} 段・問 AI`, chat: "和書伴聊這份文件", points: `第 ${i + 1} 段・劃重點`, explain: `第 ${i + 1} 段・逐步講解`, quiz: `第 ${i + 1} 段・考考我`, cloze: `第 ${i + 1} 段・挖空複習`, overview: "全文導讀" }[S.tab];
   $("#chatDock").hidden = S.tab !== "chat";
   document.body.classList.toggle("cloze-on", S.tab === "cloze"); document.body.classList.toggle("peek", !!S.peek);
   document.querySelectorAll("#tabs button").forEach(b => {
@@ -1541,6 +1550,20 @@ function renderPane() {
     } else h = emptyState("讀完了？來測一下", "書伴會依這一段出 3 題單選題，答完立刻告訴你為什麼。想用對話方式被考，也可以在「對話」按「考我一題」。", "runQuiz", "📝 出題考我");
     if (n.quizErr) h += `<p class="err">${esc(n.quizErr)}</p>`;
   }
+  else if (S.tab === "ask") {
+    const sec = S.doc.sections[i];
+    if (!sec.text.trim()) h = `<div class="empty"><strong>這一段沒有文字</strong><span>這一段是圖片或掃描頁，沒辦法複製文字給 AI。可以把圖片截圖，直接傳給 AI 問。</span></div>`;
+    else {
+      h += `<div class="label"><span>① 想請 AI 做什麼？</span></div><div class="ai-tasks">${AI_TASKS.map(t => `<button class="btn small ${S.askTask === t.id ? "on" : ""}" type="button" data-task="${t.id}">${t.label}</button>`).join("")}</div>`;
+      if (S.askTask === "own") h += `<textarea class="ai-q" id="askOwn" placeholder="輸入你想問的問題，例如：這段的「迴歸」跟統計課學的一樣嗎？">${esc(S.askOwn || "")}</textarea>`;
+      h += `<div class="label"><span>② 按一下：自動複製，並打開 AI</span></div>
+        <div class="ai-go">${AI_SITES.map(s => `<button class="btn primary" type="button" data-ai="${s.id}">${s.label}</button>`).join("")}<button class="btn" type="button" data-ai="copy">📋 只複製</button></div>`;
+      if (S.askDone) h += `<div class="ai-ok" role="status">${S.askDone}</div>`;
+      h += `<p class="why">③ 到 AI 的輸入框<b>長按 →「貼上」</b>（電腦按 Ctrl＋V）→ 送出。<br>AI 會根據<b>這一段原文</b>回答。想問下一段，先翻頁再按一次。</p>`;
+      h += `<details class="ai-preview"><summary>看看會複製哪些內容</summary><pre>${esc(buildAskPrompt())}</pre></details>`;
+      h += `<p class="why" style="margin-top:10px">🔒 按下去後，這一段的文字會由你貼給 AI 服務。含身分證字號、病歷、薪資等個資的內容，請先遮蔽再問。AI 也可能說錯，重要的內容請再對照原文或老師的說明。</p>`;
+    }
+  }
   else if (S.tab === "cloze") {
     if (S.busy[i + "cloze"]) h = busyHtml("正在挑關鍵詞、幫你挖空…");
     else if (n.cloze) h = renderCloze(i, n);
@@ -1577,6 +1600,8 @@ $("#pane").addEventListener("click", e => {
     else c.forgot = c.forgot.filter(f => f !== w);
     renderPane(); Saver.schedule(); return;
   }
+  if (t.dataset.task) { S.askTask = t.dataset.task; store.set("askTask", S.askTask); S.askDone = ""; renderPane(); if (S.askTask === "own") { const el = $("#askOwn"); if (el) el.focus(); } return; }
+  if (t.dataset.ai) { askAI(t.dataset.ai); return; }
   if (t.dataset.delpt !== undefined) { if (n.points) { n.points.points.splice(+t.dataset.delpt, 1); if (!n.points.points.length) n.points = null; } renderReader(); renderPane(); Saver.schedule(); return; }
   if (t.dataset.flip !== undefined) { t.textContent = t.dataset.flip; t.classList.add("seen"); return; }
   if (t.dataset.goto !== undefined) { go(+t.dataset.goto); return; }
@@ -1903,6 +1928,53 @@ $("#shelfList").addEventListener("click", async e => {
     pendingDelete = null; openShelf();
   }
 });
+
+/* ---------- ask any AI: copy a ready-made prompt and open the person's own AI ---------- */
+const AI_TASKS = [
+  { id: "explain", label: "🎓 白話講解", ask: "請用白話、一步一步講解這一段：先用兩三句話說結論，再依原文順序拆解重點，舉一個生活或工作上的例子，最後提醒容易誤會的地方。" },
+  { id: "points", label: "✏️ 整理重點", ask: "請幫我整理這一段的重點：一句話的段落大意、3～6 個重點（盡量引用原文關鍵句）、重要名詞的白話解釋。" },
+  { id: "quiz", label: "📝 出題考我", ask: "請根據這一段出 3 題單選題考我，考「理解」而不是死背。先只給題目和選項，等我回答後，再告訴我對錯、說明原因，並指出原文依據。" },
+  { id: "example", label: "💡 舉例說明", ask: "請用 2～3 個生活或職場中的具體例子，幫我理解這一段在說什麼。" },
+  { id: "memo", label: "🧠 記憶口訣", ask: "請幫我把這一段整理成好記的口訣、比較表或圖像聯想，方便考前背誦。" },
+  { id: "own", label: "❓ 我自己問", ask: "" }
+];
+const AI_SITES = [
+  { id: "chatgpt", label: "ChatGPT", url: "https://chatgpt.com/" },
+  { id: "gemini", label: "Gemini", url: "https://gemini.google.com/app" },
+  { id: "claude", label: "Claude", url: "https://claude.ai/new" }
+];
+S.askTask = store.get("askTask", "explain"); S.askOwn = ""; S.askDone = "";
+function buildAskPrompt() {
+  const i = S.idx, sec = S.doc.sections[i], n = note(i);
+  const t = AI_TASKS.find(x => x.id === S.askTask) || AI_TASKS[0];
+  const ask = t.id === "own" ? (S.askOwn.trim() || "（請在這裡輸入你的問題）") : t.ask;
+  const text = sec.text.length > 6000 ? sec.text.slice(0, 6000) + "\n（原文太長，後面省略）" : sec.text;
+  const mine = n.points && !n.points.example && n.points.points.length ? `\n\n我自己劃的重點：\n${n.points.points.map(p => "・" + p.quote).join("\n")}` : "";
+  return `你是一位親切、有耐心的陪讀老師。請一律用台灣繁體中文回答，並且只根據下面的原文講解；原文沒有提到、或你不確定的內容，請直接說明，不要猜。\n\n我的需求：${ask}\n\n文件：《${S.doc.title}》第 ${i + 1} 段「${sec.title}」\n＜原文開始＞\n${text}\n＜原文結束＞${mine}`;
+}
+function copyText(text) {
+  // synchronous copy first, so it still counts as part of the tap (some phones block it otherwise)
+  let ok = false;
+  try {
+    const ta = document.createElement("textarea");
+    ta.value = text; ta.setAttribute("readonly", ""); ta.style.cssText = "position:fixed;top:0;left:0;opacity:0;font-size:16px";
+    document.body.appendChild(ta); ta.select(); ta.setSelectionRange(0, text.length);
+    ok = document.execCommand("copy"); ta.remove();
+  } catch (e) { ok = false; }
+  if (!ok && navigator.clipboard) { navigator.clipboard.writeText(text).catch(() => {}); ok = true; }
+  return ok;
+}
+function askAI(site) {
+  if (S.askTask === "own" && !S.askOwn.trim()) { S.askDone = "請先在上面輸入你想問的問題 🙂"; renderPane(); const el = $("#askOwn"); if (el) el.focus(); return; }
+  const ok = copyText(buildAskPrompt());
+  const s = AI_SITES.find(x => x.id === site);
+  if (s) window.open(s.url, "_blank", "noopener");
+  S.askDone = !ok ? "⚠ 這台裝置不讓網頁自動複製。請打開下面的「看看會複製哪些內容」，長按文字自己複製。"
+    : s ? `✅ 已複製！請到 <b>${s.label}</b> 的輸入框長按 →「貼上」→ 送出。（如果 ${s.label} 沒有自動打開，請自己打開它）`
+    : "✅ 已複製！到任何 AI 的輸入框長按 →「貼上」就可以了。";
+  renderPane();
+}
+$("#pane").addEventListener("input", e => { if (e.target.id === "askOwn") S.askOwn = e.target.value; });
 
 /* ---------- install as an app ---------- */
 let installEvt = null;
