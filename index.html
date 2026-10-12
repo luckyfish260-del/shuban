@@ -1,0 +1,2170 @@
+<!doctype html>
+<html lang="zh-Hant-TW">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="description" content="上傳講義或貼上文字，邊聽朗讀邊劃重點、挖空複習。文件只在你的裝置上處理。">
+<meta name="theme-color" content="#1E7563">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="書伴">
+<title>書伴｜陪你讀書</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=LXGW+WenKai+TC:wght@400;700&family=Noto+Sans+TC:wght@400;500;700&family=Noto+Serif+TC:wght@400;600&display=swap">
+<style>
+/* Layout: a study desk — the document on the left like an open book, the companion's conversation on the right; highlighter marks and a reading cursor tie the two together. */
+:root{
+  --bg:#EEF2F0; --paper:#FBFCFB; --ink:#1D2826; --muted:#5D6D69; --line:#D3DDD9;
+  --accent:#1E7563; --accent-ink:#FFFFFF; --accent-soft:#DCEDE7;
+  --marker:#F7E27E; --marker-ink:#2B2A12; --reading:#BFE3F5; --reading-ink:#0F2A36;
+  --good:#2F7D3B; --bad:#B23B2E; --warn-bg:#FFF4D6; --warn-ink:#6A4B00;
+  --f-display:"LXGW WenKai TC","Kaiti TC","STKaiti","BiauKai",serif;
+  --f-read:"Noto Serif TC","Songti TC","PMingLiU",serif;
+  --f-ui:"Noto Sans TC","PingFang TC","Microsoft JhengHei",system-ui,sans-serif;
+  --r:10px;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#121918; --paper:#1A2321; --ink:#E3ECE9; --muted:#9AAEA9; --line:#2D3B38;
+  --accent:#5BC2A8; --accent-ink:#0D1715; --accent-soft:#1E3530;
+  --marker:#6B5A12; --marker-ink:#FFF6CC; --reading:#1F4A5C; --reading-ink:#E2F5FF;
+  --good:#6CC27A; --bad:#F08A7C; --warn-bg:#3A2F10; --warn-ink:#F6DFA0; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#121918; --paper:#1A2321; --ink:#E3ECE9; --muted:#9AAEA9; --line:#2D3B38;
+  --accent:#5BC2A8; --accent-ink:#0D1715; --accent-soft:#1E3530;
+  --marker:#6B5A12; --marker-ink:#FFF6CC; --reading:#1F4A5C; --reading-ink:#E2F5FF;
+  --good:#6CC27A; --bad:#F08A7C; --warn-bg:#3A2F10; --warn-ink:#F6DFA0; color-scheme:dark}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{background:var(--bg);color:var(--ink)}
+body{font-family:var(--f-ui);font-size:15px;line-height:1.6;padding-inline:16px;padding-block:0 40px}
+button,select,textarea,input{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.wrap{max-width:1260px;margin:0 auto}
+header.top{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px 20px;padding-block:22px 16px}
+.brand{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap}
+.brand h1{font-family:var(--f-display);font-size:34px;line-height:1;margin:0;letter-spacing:.04em}
+.brand p{margin:0;color:var(--muted);font-size:14px}
+.tools{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.btn{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);background:var(--paper);padding:8px 14px;border-radius:999px;cursor:pointer;font-size:14px;line-height:1.3}
+.btn:hover:not(:disabled){border-color:var(--accent)}
+.btn.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent);font-weight:500}
+.btn.on{background:var(--accent-soft);border-color:var(--accent);color:var(--accent);font-weight:500}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.btn.small{padding:5px 11px;font-size:13px}
+.icon-btn{border:0;background:none;cursor:pointer;color:var(--muted);padding:2px 6px;border-radius:6px;font-size:13px}
+.icon-btn:hover{color:var(--accent);background:var(--accent-soft)}
+input[type=file]{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none}
+.notice{background:var(--warn-bg);color:var(--warn-ink);border-radius:var(--r);padding:10px 14px;font-size:13.5px;margin-bottom:14px}
+.privacy{font-size:12.5px;color:var(--muted);margin:0 0 14px}
+.desk{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:18px;align-items:start}
+@media (max-width:860px){.desk{grid-template-columns:minmax(0,1fr)}}
+.sheet{background:var(--paper);border:1px solid var(--line);border-radius:var(--r);min-width:0}
+/* Reader */
+.reader-head{padding:18px 22px 12px;border-bottom:1px solid var(--line);display:flex;flex-direction:column;gap:10px}
+.doc-title{font-family:var(--f-display);font-size:22px;margin:0;text-wrap:balance;word-break:break-word}
+.doc-meta{font-size:12.5px;color:var(--muted);display:flex;flex-wrap:wrap;gap:4px 14px;font-variant-numeric:tabular-nums}
+.tag{display:inline-block;padding:1px 8px;border-radius:999px;background:var(--accent-soft);color:var(--accent);font-size:12px;font-weight:500}
+.nav{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.nav select{flex:1 1 200px;min-width:0;padding:7px 10px;border:1px solid var(--line);border-radius:8px;background:var(--paper)}
+.progress{height:4px;background:var(--line);border-radius:4px;overflow:hidden}
+.progress i{display:block;height:100%;background:var(--accent);transition:width .3s}
+.listen{display:flex;flex-wrap:wrap;gap:8px;align-items:center;font-size:13px;color:var(--muted)}
+.listen label{display:inline-flex;align-items:center;gap:5px;cursor:pointer}
+.reader-body{padding:20px 22px 26px;font-family:var(--f-read);font-size:16.5px;line-height:1.95;max-height:66vh;overflow:auto}
+.reader-body .txt{white-space:pre-wrap;word-break:break-word;max-width:40em}
+.reader-body img{display:block;border:1px solid var(--line);border-radius:6px}
+mark{background:var(--marker);color:var(--marker-ink);padding:0 2px;border-radius:2px;cursor:pointer;box-decoration-break:clone;-webkit-box-decoration-break:clone}
+mark sup{font-family:var(--f-ui);font-size:10px;font-weight:700;color:var(--accent);margin-left:2px}
+mark.flash{outline:2px solid var(--accent)}
+.reading{background:var(--reading);color:var(--reading-ink);border-radius:3px;box-decoration-break:clone;-webkit-box-decoration-break:clone}
+.reading.rd-done{color:var(--accent);text-decoration:underline 3px var(--accent);text-underline-offset:7px;text-decoration-skip-ink:none}
+.reading.rd-cur{background:var(--accent);color:var(--accent-ink);border-radius:3px;box-shadow:0 0 0 2px var(--accent);text-decoration:none}
+.reading.rd-cur mark,.reading.rd-cur sup{background:transparent;color:inherit}
+.reading mark{background:var(--marker);color:var(--marker-ink)}
+.markstate{font-size:12.5px;color:var(--accent)}
+.drop{border:2px dashed var(--line);border-radius:var(--r);padding:26px 18px;text-align:center;color:var(--muted);font-size:14px}
+body.dragging .sheet.reader{border-color:var(--accent)}
+.paste{display:flex;flex-direction:column;gap:10px;padding:16px 22px;border-bottom:1px solid var(--line)}
+.paste textarea{width:100%;min-height:140px;border:1px solid var(--line);border-radius:8px;padding:10px;background:var(--bg);resize:vertical}
+.paste input{border:1px solid var(--line);border-radius:8px;padding:7px 10px;background:var(--bg)}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+/* Companion */
+.comp{display:flex;flex-direction:column}
+.comp-head{padding:16px 18px 0;display:flex;flex-direction:column;gap:10px}
+.comp-title{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+.comp-title h2{font-family:var(--f-display);font-size:20px;margin:0}
+.state{font-size:12px;color:var(--muted);display:inline-flex;align-items:center;gap:6px}
+.state i{width:8px;height:8px;border-radius:50%;background:var(--muted)}
+.state.ready i{background:var(--good)} .state.off i{background:var(--bad)}
+.settings{display:flex;flex-wrap:wrap;gap:6px 12px;font-size:13px;color:var(--muted);align-items:center}
+.settings select{padding:4px 6px;border:1px solid var(--line);border-radius:7px;background:var(--paper);max-width:180px}
+.settings label{display:inline-flex;align-items:center;gap:5px}
+.voices{font-size:13px;color:var(--muted);border:1px solid var(--line);border-radius:8px;padding:6px 10px}
+.voices summary{cursor:pointer;color:var(--ink);font-weight:500}
+.vgrid{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:6px 8px;align-items:center;margin:10px 0 8px}
+.vgrid select{min-width:0;width:100%;padding:4px 6px;border:1px solid var(--line);border-radius:7px;background:var(--paper)}
+.vnote{grid-column:2 / -1;font-size:12px;color:var(--bad)}
+.vnote:empty{display:none}
+.ml{display:flex;gap:6px;align-items:flex-start;margin-bottom:6px}
+.vhint{margin:4px 0;font-size:12.5px}
+.vhint.warn{background:var(--warn-bg);color:var(--warn-ink);border-radius:6px;padding:6px 8px}
+.tabs{display:flex;gap:2px;border-bottom:1px solid var(--line);overflow-x:auto}
+.tabs button{border:0;background:none;padding:9px 12px;cursor:pointer;color:var(--muted);border-bottom:2px solid transparent;white-space:nowrap;font-size:14px}
+.tabs button[aria-selected=true]{color:var(--ink);border-bottom-color:var(--accent);font-weight:500}
+.tabs .dot{display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--accent);margin-left:5px;vertical-align:middle}
+.pane{padding:16px 18px 20px;height:56vh;min-height:320px;overflow:auto}
+@media (max-width:860px){.pane{height:auto;max-height:70vh}}
+.empty{display:flex;flex-direction:column;align-items:flex-start;gap:10px;color:var(--muted);font-size:14px}
+.empty strong{color:var(--ink);font-family:var(--f-display);font-size:17px;font-weight:700}
+.status{display:flex;align-items:center;gap:10px;color:var(--muted);font-size:13.5px;margin-bottom:10px}
+.spin{width:14px;height:14px;border:2px solid var(--line);border-top-color:var(--accent);border-radius:50%;animation:sp 1s linear infinite;flex:none}
+@keyframes sp{to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion:reduce){.spin{animation:none}.progress i{transition:none}}
+.err{color:var(--bad);font-size:13.5px;margin:6px 0 0}
+.label{font-size:11.5px;letter-spacing:.12em;color:var(--muted);font-weight:700;margin:16px 0 8px;display:flex;justify-content:space-between;align-items:center;gap:8px}
+.label:first-child{margin-top:0}
+.summary{font-size:15px;background:var(--accent-soft);border-radius:8px;padding:10px 12px}
+ol.points{list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:10px;counter-reset:p}
+ol.points li{display:grid;grid-template-columns:26px minmax(0,1fr);gap:8px;counter-increment:p}
+ol.points li::before{content:counter(p);width:22px;height:22px;border-radius:50%;background:var(--marker);color:var(--marker-ink);font-size:12px;font-weight:700;display:grid;place-items:center;margin-top:3px}
+.q{font-family:var(--f-read);cursor:pointer}
+.q:hover{text-decoration:underline;text-decoration-color:var(--accent)}
+.why{font-size:13.5px;color:var(--muted)}
+dl.terms{margin:0;display:grid;grid-template-columns:max-content minmax(0,1fr);gap:6px 14px;font-size:14px}
+dl.terms dt{font-weight:700}
+dl.terms dd{margin:0;color:var(--muted)}
+@media (max-width:460px){dl.terms{grid-template-columns:minmax(0,1fr)}dl.terms dd{margin-bottom:6px}}
+.md{font-size:15px;line-height:1.8;word-break:break-word}
+.md h4{font-family:var(--f-display);margin:12px 0 6px;font-size:17px}
+.md h4:first-child{margin-top:0}
+.md p{margin:0 0 10px}
+.md p:last-child{margin-bottom:0}
+.md ul,.md ol{margin:0 0 10px;padding-left:1.4em}
+.md li{margin:2px 0}
+.md code{background:var(--bg);padding:0 4px;border-radius:4px;font-size:.92em}
+.md blockquote{margin:0 0 10px;padding:4px 12px;border-left:3px solid var(--marker);color:var(--muted)}
+.md table{border-collapse:collapse;font-size:14px;margin-bottom:10px}
+.md th,.md td{border:1px solid var(--line);padding:4px 8px;text-align:left}
+.tblwrap{overflow-x:auto}
+.quiz{display:flex;flex-direction:column;gap:18px}
+.qz h4{margin:0 0 8px;font-size:15px;font-weight:500}
+.qz .opts{display:flex;flex-direction:column;gap:6px}
+.qz .opts button{text-align:left;border:1px solid var(--line);background:var(--paper);border-radius:8px;padding:8px 12px;cursor:pointer}
+.qz .opts button:hover:not(:disabled){border-color:var(--accent)}
+.qz .opts button.right{border-color:var(--good);color:var(--good);font-weight:500}
+.qz .opts button.wrong{border-color:var(--bad);color:var(--bad)}
+.qz .exp{font-size:13.5px;color:var(--muted);margin-top:8px}
+/* Conversation */
+.chat{display:flex;flex-direction:column;gap:12px}
+.msg{display:flex;flex-direction:column;gap:4px;max-width:94%}
+.msg.me{align-self:flex-end;align-items:flex-end}
+.msg.bot{align-self:flex-start}
+.who{font-size:11.5px;color:var(--muted);display:flex;gap:6px;align-items:center}
+.bubble{padding:9px 13px;border-radius:14px;word-break:break-word}
+.me .bubble{background:var(--accent);color:var(--accent-ink);white-space:pre-wrap;border-bottom-right-radius:4px}
+.bot .bubble{background:var(--bg);border:1px solid var(--line);border-bottom-left-radius:4px}
+.bot.speaking .bubble{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent-soft)}
+.divider{align-self:center;font-size:12px;color:var(--muted);border:1px solid var(--line);border-radius:999px;padding:2px 12px}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.quick{padding:10px 18px 0;border-top:1px solid var(--line)}
+.ask{display:flex;gap:8px;padding:10px 18px 16px;align-items:flex-end}
+.ask textarea{flex:1;min-width:0;resize:none;height:46px;max-height:140px;border:1px solid var(--line);border-radius:12px;padding:10px 12px;background:var(--bg)}
+.hint{font-size:12px;color:var(--muted);padding:0 18px 12px;margin-top:-6px}
+.example{font-size:12px;color:var(--muted);border:1px dashed var(--line);border-radius:6px;padding:6px 10px;margin-bottom:12px}
+.track{display:flex;flex-wrap:wrap;gap:8px;align-items:center;font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums}
+.track .count{flex:1 1 180px}
+.track b{color:var(--ink)}
+.sync{display:inline-block;font-size:12px;color:var(--muted);white-space:nowrap}
+.sync[data-state=err]{color:var(--bad)}
+.sync[data-state=ok]{color:var(--good)}
+.shelf{padding:16px 20px 18px;margin-bottom:18px}
+.shelf-head{display:flex;flex-wrap:wrap;align-items:baseline;gap:6px 14px;margin-bottom:12px}
+.shelf-head h2{font-family:var(--f-display);font-size:20px;margin:0}
+.shelf-head .why{flex:1 1 200px}
+#shelfList{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,340px),1fr));gap:12px}
+.book{border:1px solid var(--line);border-radius:var(--r);padding:12px 14px;display:flex;flex-direction:column;gap:10px;min-width:0}
+.book h3{margin:0 0 4px;font-size:16px;word-break:break-word}
+.book-main{display:flex;flex-direction:column;gap:6px;min-width:0}
+.book-act{display:flex;gap:8px;flex-wrap:wrap}
+.libgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,340px),1fr));gap:12px;margin-bottom:6px}
+.bar{height:6px;background:var(--line);border-radius:6px;overflow:hidden}
+.bar i{display:block;height:100%;background:var(--accent)}
+footer{color:var(--muted);font-size:12.5px;margin-top:18px}
+/* Timers */
+.examstrip{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 14px}
+.examstrip .ex{background:var(--accent-soft);color:var(--ink);border-radius:999px;padding:4px 12px;font-size:13.5px;font-variant-numeric:tabular-nums}
+.examstrip b{color:var(--accent);font-size:15px}
+.examstrip small{color:var(--muted);margin-left:2px}
+.timer{padding:16px 20px 18px;margin-bottom:18px}
+#tmTabs{margin-bottom:14px}
+#tmMsg{margin:0 0 12px;font-weight:500}
+.tm-main{display:flex;flex-wrap:wrap;gap:22px;align-items:center}
+.dial{position:relative;width:min(220px,70vw);aspect-ratio:1;max-width:100%;flex:none}
+.dial svg{width:100%;height:100%;transform:rotate(-90deg)}
+.dial circle{fill:none;stroke-width:8}
+.dial .track{stroke:var(--line)}
+.dial .prog{stroke:var(--accent);stroke-linecap:round;stroke-dasharray:339.29;stroke-dashoffset:0;transition:stroke-dashoffset .3s linear}
+.dial-in{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:0 22px}
+.dial .big{font-family:var(--f-display);font-size:clamp(34px,9vw,46px);font-variant-numeric:tabular-nums;line-height:1}
+.dial .phase{font-size:12.5px;color:var(--muted);margin-top:6px}
+.tm-side{flex:1 1 260px;min-width:0;display:flex;flex-direction:column;gap:10px}
+.tm-set{display:flex;flex-wrap:wrap;gap:6px 8px;align-items:center;font-size:13.5px;color:var(--muted)}
+.tm-set input,.tm-form input{width:5.2em;padding:6px 8px;border:1px solid var(--line);border-radius:8px;background:var(--paper);font-variant-numeric:tabular-nums}
+.tm-set span{margin-right:8px}
+.tm-form{display:flex;flex-wrap:wrap;gap:8px;align-items:center;font-size:13.5px;color:var(--muted)}
+.tm-form #exName{width:min(260px,100%)}
+.tm-form #exDate{width:auto}
+.exlist{list-style:none;padding:0;margin:10px 0 0;display:flex;flex-direction:column;gap:6px}
+.exlist li{display:flex;flex-wrap:wrap;gap:6px 14px;align-items:center;justify-content:space-between;border:1px solid var(--line);border-radius:8px;padding:8px 12px;font-variant-numeric:tabular-nums}
+.exlist li.past{opacity:.55}
+.tm-foot{display:flex;flex-wrap:wrap;gap:8px 18px;justify-content:space-between;align-items:center;border-top:1px solid var(--line);margin-top:16px;padding-top:12px;font-size:13px;color:var(--muted)}
+.tm-foot b{color:var(--ink)}
+.tm-foot label{display:inline-flex;gap:6px;align-items:center}
+.tpill{position:fixed;right:16px;bottom:calc(16px + env(safe-area-inset-bottom,0px));z-index:50;border:0;border-radius:999px;padding:10px 16px;background:var(--accent);color:var(--accent-ink);font-family:var(--f-ui);font-size:15px;font-weight:700;font-variant-numeric:tabular-nums;cursor:pointer;box-shadow:0 4px 14px rgba(0,0,0,.18)}
+.tpill.rest{background:var(--marker);color:var(--marker-ink)}
+.tpill.ring{animation:ringme .5s ease-in-out 6}
+@keyframes ringme{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px) scale(1.06)}}
+@media (prefers-reduced-motion:reduce){.tpill.ring{animation:none;outline:3px solid var(--bad)}.dial .prog{transition:none}}
+/* Cloze review */
+.cz-bar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:12px;font-size:13px;color:var(--muted)}
+.cz-bar select{padding:5px 8px;border:1px solid var(--line);border-radius:8px;background:var(--paper)}
+.cz-how{font-size:13px;color:var(--muted);background:var(--bg);border-radius:8px;padding:8px 12px;margin-bottom:12px}
+.cloze{font-family:var(--f-read);font-size:16.5px;line-height:2.25;white-space:pre-wrap;word-break:break-word}
+.blank{font:inherit;font-size:15.5px;line-height:1.55;border:0;border-bottom:2px solid var(--accent);background:var(--accent-soft);color:var(--accent);border-radius:5px 5px 0 0;padding:1px 7px;margin:0 2px;cursor:pointer;white-space:normal;min-width:2.6em}
+.blank small{font-family:var(--f-ui);font-size:11px;color:var(--muted);margin-left:4px}
+.blank.seen{background:var(--marker);color:var(--marker-ink);border-color:var(--good);font-weight:600}
+.blank.forgot{background:transparent;color:var(--bad);border-color:var(--bad);font-weight:600}
+.blank.forgot::after{content:" ✗";font-size:12px}
+.cz-score{font-size:13.5px;margin-top:14px;font-variant-numeric:tabular-nums}
+.cz-list{display:flex;flex-direction:column;gap:6px;font-size:14px}
+.cz-list .it{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.cz-list .sec{font-size:12px;color:var(--muted)}
+body.cloze-on:not(.peek) #readerBody{filter:blur(7px);user-select:none;-webkit-user-select:none;pointer-events:none}
+@media (prefers-reduced-motion:no-preference){#readerBody{transition:filter .25s}}
+</style>
+<style>
+body{margin:0;padding-top:env(safe-area-inset-top,0px)}
+mark sup::after{content:attr(data-k)}
+.hide{display:none!important}
+.pt-del{margin-left:6px}
+.install{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center;background:var(--accent-soft);color:var(--ink);border-radius:var(--r);padding:10px 14px;font-size:13.5px;margin-bottom:14px}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header class="top">
+    <div class="brand">
+      <h1>書伴</h1>
+      <p>上傳講義，聽朗讀、劃重點、挖空複習</p>
+    </div>
+    <div class="tools">
+      <label class="btn primary" for="file">📖 開啟文件</label>
+      <input id="file" type="file" accept=".pdf,.docx,.pptx,.xlsx,.xls,.csv,.txt,.md,.html,.htm,.json,.epub,.srt,.png,.jpg,.jpeg,.webp">
+      <button class="btn" id="pasteBtn" type="button">貼上文字</button>
+      <button class="btn" id="shelfBtn" type="button">📚 我的書架</button>
+      <button class="btn" id="installBtn" type="button" hidden>📲 安裝到手機</button>
+      <button class="btn" id="timerBtn" type="button">⏱ 計時器</button>
+    </div>
+  </header>
+
+  <div class="notice hide" id="noAI" hidden>AI 對話目前無法使用：需要在 Claude 裡開啟這個頁面，並在跳出的視窗按「允許」。你仍然可以上傳文件閱讀，也可以用語音朗讀原文。</div>
+  <div class="notice" id="noTTS" hidden></div>
+  <p class="privacy">🔒 文件只在你自己的手機或電腦裡處理，<b>不會上傳到任何伺服器</b>。讀書進度和劃的重點只存在這台裝置的瀏覽器裡（清除瀏覽資料會一起清掉）。含身分證字號、病歷、薪資等個資的文件，建議先遮蔽再開啟。　<span class="sync" id="sync"></span></p>
+
+  <div class="install" id="iosTip" hidden>📲 iPhone／iPad 安裝方式：用 Safari 打開這頁 → 按下方「分享」→「加入主畫面」。<button class="btn small" id="iosTipClose" type="button">知道了</button></div>
+  <div class="examstrip" id="examStrip" hidden></div>
+  <section class="sheet timer" id="timerPanel" hidden aria-label="計時器">
+    <div class="shelf-head"><h2>計時器</h2><span class="why" id="tmNote"></span><button class="btn small" id="timerClose" type="button">關閉</button></div>
+    <div class="tabs" id="tmTabs" role="tablist">
+      <button role="tab" data-m="pomo" aria-selected="true">🍅 番茄鐘</button>
+      <button role="tab" data-m="exam" aria-selected="false">📝 模擬考</button>
+      <button role="tab" data-m="custom" aria-selected="false">⏲ 自訂倒數</button>
+      <button role="tab" data-m="dates" aria-selected="false">📅 考試日倒數</button>
+    </div>
+    <p class="notice" id="tmMsg" hidden></p>
+    <div id="timerBody"></div>
+  </section>
+  <button class="tpill" id="timerPill" type="button" hidden aria-label="打開計時器"></button>
+  <section class="sheet shelf" id="shelf" hidden aria-label="我的書架">
+    <div class="shelf-head"><h2>我的書架</h2><span class="why" id="shelfNote"></span><button class="btn small" id="shelfClose" type="button">關閉</button></div>
+    <div id="libList"></div>
+    <div id="shelfList"></div>
+  </section>
+
+  <div class="desk">
+    <section class="sheet reader" aria-label="文件內容">
+      <div class="paste" id="pastePanel" hidden>
+        <label for="pasteTitle" class="why">標題（可留白）</label>
+        <input id="pasteTitle" type="text" placeholder="例如：勞基法講義第三章">
+        <label for="pasteText" class="why">貼上要讀的文字</label>
+        <textarea id="pasteText" placeholder="把文章、講義或條文貼在這裡…"></textarea>
+        <div class="row"><button class="btn primary small" id="pasteGo" type="button">開始閱讀</button><button class="btn small" id="pasteCancel" type="button">取消</button></div>
+      </div>
+      <div class="reader-head">
+        <h2 class="doc-title" id="docTitle">—</h2>
+        <div class="doc-meta" id="docMeta"></div>
+        <div class="nav">
+          <button class="btn small" id="prev" type="button">‹ 上一段</button>
+          <select id="secSel" aria-label="選擇段落"></select>
+          <button class="btn small" id="next" type="button">下一段 ›</button>
+        </div>
+        <div class="progress"><i id="prog" style="width:0"></i></div>
+        <div class="track" id="track"></div>
+        <div class="listen">
+          <button class="btn small" id="readBtn" type="button">🔊 朗讀原文</button>
+          <button class="btn small hide" id="guideBtn" type="button">🎧 語音導讀這段</button>
+          <label for="rate2">⏩ 語速 <select id="rate2" aria-label="朗讀速度"><option value="0.8">0.8× 慢</option><option value="1" selected>1× 正常</option><option value="1.2">1.2×</option><option value="1.5">1.5× 快</option><option value="1.75">1.75×</option><option value="2">2× 很快</option><option value="2.5">2.5× 極速</option></select></label>
+          <label for="readLang">朗讀語言 <select id="readLang"><option value="auto">自動（中英日混合）</option><option value="zh">全部用中文唸</option><option value="en">英文原文</option><option value="ja">日文原文</option></select></label>
+          <button class="btn small" id="markBtn" type="button" title="先選取原文的句子，再按這裡">✏️ 劃重點</button>
+          <label for="autoMark" class="hide"><input type="checkbox" id="autoMark"> 自動劃重點</label>
+          <label for="follow"><input type="checkbox" id="follow" checked> 逐字引導</label>
+          <label for="autoNext"><input type="checkbox" id="autoNext"> 讀完自動翻下一段</label>
+          <span class="markstate" id="markState"></span>
+        </div>
+      </div>
+      <div class="reader-body" id="readerBody"></div>
+    </section>
+
+    <section class="sheet comp" aria-label="書伴">
+      <div class="comp-head">
+        <div class="comp-title">
+          <h2 id="compTitle">重點與複習</h2>
+          <span class="state hide" id="aiState"><i></i><span>正在連線 Claude…</span></span>
+        </div>
+        <div class="settings hide">
+          <label for="mode">講解方式
+            <select id="mode"><option>白話入門</option><option>考試準備</option><option>法規條文</option><option>職場應用</option></select>
+          </label>
+          <label for="rate">語速
+            <select id="rate"><option value="0.8">0.8× 慢</option><option value="1" selected>1× 正常</option><option value="1.2">1.2×</option><option value="1.5">1.5× 快</option><option value="1.75">1.75×</option><option value="2">2× 很快</option><option value="2.5">2.5× 極速</option></select>
+          </label>
+          <label for="autoSpeak"><input type="checkbox" id="autoSpeak"> 自動唸出回覆</label>
+        </div>
+        <details class="voices" id="voicePanel" open>
+          <summary>🔈 聲音設定：中文、英文、日文各選各的聲音</summary>
+          <div class="vgrid">
+            <label for="voice-zh">中文</label><select id="voice-zh"><option value="">自動挑最自然的</option></select><button class="btn small" type="button" data-try="zh">▶ 試聽</button><span class="vnote" id="vnote-zh"></span>
+            <label for="voice-en">英文</label><select id="voice-en"><option value="">自動挑最自然的</option></select><button class="btn small" type="button" data-try="en">▶ 試聽</button><span class="vnote" id="vnote-en"></span>
+            <label for="voice-ja">日文</label><select id="voice-ja"><option value="">自動挑最自然的</option></select><button class="btn small" type="button" data-try="ja">▶ 試聽</button><span class="vnote" id="vnote-ja"></span>
+            <label for="pitch">音調</label><select id="pitch"><option value="0.85">低沉</option><option value="1" selected>自然</option><option value="1.15">明亮</option></select><span></span>
+          </div>
+          <label class="ml" for="multiLang"><input type="checkbox" id="multiLang" checked> 文中的英文、日文改用原文發音（例如 Supervised Learning 用英文唸）</label>
+          <p class="vhint">每種語言都可以換不同的人聲，標有「★自然」的最接近真人；按「▶ 試聽」比較後選你喜歡的。英文有美式、英式等口音可選（依裝置而定）。</p>
+          <div class="row" style="margin:6px 0"><button class="btn small" type="button" id="diagBtn">🩺 聲音檢查</button><span class="vhint" style="margin:0">沒聲音時按這裡，可以截圖給幫你設定的人</span></div>
+          <pre id="diagOut" hidden style="white-space:pre-wrap;font:12.5px/1.6 var(--f-ui);background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:8px 10px;margin:6px 0"></pre>
+          <p class="vhint warn" id="voiceHint" hidden>這台裝置沒有很自然的中文聲音。電腦建議改用 <b>Microsoft Edge</b> 開啟（內建「自然」語音，例如曉臻 HsiaoChen）；iPhone／iPad 可以到系統的「朗讀內容」設定，下載「優化」或「高品質」的中文聲音。</p>
+        </details>
+        <div class="tabs" role="tablist" id="tabs">
+          <button role="tab" data-tab="chat" aria-selected="false" class="hide">💬 對話</button>
+          <button role="tab" data-tab="points" aria-selected="true">✏️ 我的重點</button>
+          <button role="tab" data-tab="explain" aria-selected="false" class="hide">逐步講解</button>
+          <button role="tab" data-tab="quiz" aria-selected="false" class="hide">考考我</button>
+          <button role="tab" data-tab="cloze" aria-selected="false">🧠 挖空複習</button>
+          <button role="tab" data-tab="overview" aria-selected="false" class="hide">全文導讀</button>
+        </div>
+      </div>
+      <div class="pane" id="pane" role="tabpanel"></div>
+      <div id="chatDock" class="hide">
+        <div class="quick"><div class="chips" id="quickChips"></div></div>
+        <form class="ask" id="askForm">
+          <textarea id="askBox" placeholder="想問什麼直接打字…（Enter 送出，Shift+Enter 換行）" aria-label="和書伴說話"></textarea>
+          <button class="btn primary" type="submit" id="askBtn">送出</button>
+          <button class="btn" type="button" id="stopBtn" hidden>■ 停止</button>
+        </form>
+        <p class="hint">想用說的？可以用手機或電腦鍵盤內建的語音輸入（麥克風鍵），說完按送出。</p>
+      </div>
+    </section>
+  </div>
+  <footer>書伴網頁 App・可安裝到手機桌面、離線也能讀已開過的功能。支援 PDF（含掃描檔）、Word（.docx）、PowerPoint（.pptx）、Excel（.xlsx / .csv）、EPUB、純文字與圖片。舊版 .doc / .ppt 請先另存成新版格式或 PDF。語音朗讀使用瀏覽器內建的聲音，音色依裝置而不同。</footer>
+</div>
+
+<script>
+(() => {
+"use strict";
+const $ = s => document.querySelector(s);
+try { if (matchMedia("(max-width:860px)").matches) document.getElementById("voicePanel").open = false; } catch (e) {}
+const esc = s => String(s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+/* ---------- sample document (clearly marked) ---------- */
+const SAMPLE = {
+  title: "範例：機器學習的三種學習方式",
+  kind: "範例文件",
+  sample: true,
+  sections: [
+    { title: "監督式學習", text: "監督式學習（Supervised Learning）是用「有標準答案」的資料來訓練模型。每一筆訓練資料都包含輸入特徵與對應的標籤，例如一封郵件的文字內容，以及它是不是垃圾郵件。模型的任務是找出輸入與標籤之間的關係，之後遇到沒看過的資料時，也能做出預測。\n\n監督式學習主要分成兩類問題。分類（Classification）預測的是類別，例如判斷影像中是貓還是狗；迴歸（Regression）預測的是連續數值，例如依照坪數與屋齡估計房價。\n\n評估監督式模型時，資料通常會分成訓練集與測試集。模型只用訓練集學習，再用測試集檢查表現。如果模型在訓練集表現很好、在測試集卻明顯變差，就可能發生了過度擬合（Overfitting），也就是模型把訓練資料的雜訊也一起背了下來。" },
+    { title: "非監督式學習", text: "非監督式學習（Unsupervised Learning）使用沒有標籤的資料，讓模型自己找出資料中的結構。常見的任務是分群（Clustering），例如依照消費紀錄把顧客分成幾個族群，K-means 就是代表性的分群演算法。\n\n另一類任務是降維（Dimensionality Reduction），把很多個特徵濃縮成較少的幾個，方便視覺化或加快後續運算，主成分分析（PCA）是常見方法。因為沒有標準答案，非監督式學習的結果需要搭配領域知識來解讀。" },
+    { title: "強化學習", text: "強化學習（Reinforcement Learning）中，代理人（Agent）在環境裡採取行動，並根據得到的獎勵（Reward）調整策略。它不是從一份固定的資料集學習，而是透過反覆嘗試累積經驗，目標是讓長期累積的獎勵最大。\n\n強化學習常用在下棋、機器人控制與遊戲 AI。學習過程中要在「探索」與「利用」之間取得平衡：探索是嘗試新的行動，可能找到更好的做法；利用是選擇目前已知效果最好的行動。" }
+  ]
+};
+const SAMPLE_POINTS = {
+  example: true,
+  summary: "監督式學習用「有標籤」的資料訓練模型，分成預測類別的分類、預測數值的迴歸，並用測試集檢查是否過度擬合。",
+  points: [
+    { quote: "監督式學習（Supervised Learning）是用「有標準答案」的資料來訓練模型。", why: "核心定義：關鍵在資料有沒有「標籤」，這是和非監督式學習最大的差別。" },
+    { quote: "分類（Classification）預測的是類別", why: "輸出是「哪一類」→ 分類。考題常給情境要你判斷。" },
+    { quote: "迴歸（Regression）預測的是連續數值", why: "輸出是「多少」→ 迴歸，例如房價、溫度、銷售量。" },
+    { quote: "就可能發生了過度擬合（Overfitting）", why: "判斷訊號：訓練集好、測試集差。" }
+  ],
+  terms: [
+    { term: "標籤（Label）", meaning: "每筆資料的標準答案，例如「是垃圾郵件」。" },
+    { term: "測試集", meaning: "模型沒看過、專門用來檢查表現的資料。" }
+  ]
+};
+
+/* ---------- lazy library loader ---------- */
+const loaded = {};
+function loadScript(srcs) {
+  const list = Array.isArray(srcs) ? srcs : [srcs];
+  const key = list[0];
+  return loaded[key] ||= (async () => {
+    let lastErr;
+    for (const src of list) {
+      try {
+        await new Promise((res, rej) => {
+          const s = document.createElement("script");
+          s.src = src; s.onload = res; s.onerror = () => rej(new Error(src));
+          document.head.appendChild(s);
+        });
+        return;
+      } catch (e) { lastErr = e; }
+    }
+    delete loaded[key];
+    throw new Error("讀取元件載入失敗，請檢查網路後再試一次。");
+  })();
+}
+const LIB = {
+  pdfWorker: ["https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js", "https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js"],
+  pdf: ["https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js", "https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js"],
+  mammoth: ["https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js", "https://cdn.jsdelivr.net/npm/mammoth@1.6.0/mammoth.browser.min.js", "https://unpkg.com/mammoth@1.6.0/mammoth.browser.min.js"],
+  jszip: ["https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js", "https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"],
+  xlsx: ["https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js", "https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"]
+};
+
+/* ---------- text chunking ---------- */
+const CHUNK = 1800;
+function firstLine(t, n = 20) {
+  const l = (t.split("\n").find(x => x.trim()) || "").trim();
+  return l.length > n ? l.slice(0, n) + "…" : l || "（無標題）";
+}
+// a line that starts a new topic or a new exam question
+const HEAD_RE = /^(第[一二三四五六七八九十百零〇\d]+\s*[部分章節課單元講回篇題條]|L\d{3,5}\b|[A-Z]?\d{2,3}-\d{1,3}\s+\S|(Q|問題|題目|例題|試題)\s*\d+|\d{1,3}\s*[\.、．]\s*\S|[一二三四五六七八九十]+\s*[、．.]\s*\S|【[^】]{1,30}】)/;
+// headings worth using as a section title, strongest first
+const TITLE_RES = [/^L\d{3,5}\b/, /^[A-Z]?\d{2,3}-\d{1,3}\s+\S/, /^第[一二三四五六七八九十百零〇\d]+\s*[章節課單元篇]/, /^【[^】]{1,30}】/, /^第[一二三四五六七八九十百零〇\d]+\s*[部分講回題條]/];
+const PAGE_RE = /(第\s*\d+\s*頁|Page\s*\d+|^\s*[-–—]?\s*\d{1,4}\s*[-–—]?\s*$|^\s*\d{1,4}\s*\/\s*\d{1,4}\s*$)/i;
+// drop running headers/footers (page numbers, the same long line on many pages)
+function dropRunning(lines) {
+  const count = new Map();
+  for (const l of lines) { const k = l.t.trim().replace(/\d+/g, "#"); if (k.length >= 14) count.set(k, (count.get(k) || 0) + 1); }
+  return lines.filter(l => {
+    const s = l.t.trim(); if (!s) return true;
+    if (s.length < 60 && PAGE_RE.test(s) && !/[。？?]/.test(s)) return false;
+    const k = s.replace(/\d+/g, "#");
+    return !(k.length >= 14 && s.length < 90 && (count.get(k) || 0) >= 5);
+  });
+}
+// split lines [{t, page}] into sections, keeping each topic or question whole where possible
+function smartChunk(lines, label) {
+  lines = dropRunning(lines);
+  const blocks = []; let cur = null;
+  for (const l of lines) {
+    const s = l.t.replace(/\s+$/, "");
+    if (!cur || (HEAD_RE.test(s.trim()) && cur.len > 0)) { cur = { lines: [], len: 0, p0: l.page, p1: l.page }; blocks.push(cur); }
+    cur.lines.push(s); cur.len += s.length + 1; if (l.page) cur.p1 = l.page;
+  }
+  // a short heading block (e.g. a unit name) belongs with what follows it
+  for (let i = blocks.length - 2; i >= 0; i--) {
+    if (blocks[i].len < 160) { const n = blocks[i + 1]; n.lines = blocks[i].lines.concat(n.lines); n.len += blocks[i].len; n.p0 = blocks[i].p0 || n.p0; blocks.splice(i, 1); }
+  }
+  const out = []; let acc = null;
+  const pageTag = (a, b) => a ? (a === b ? `p.${a}・` : `p.${a}–${b}・`) : "";
+  const push = () => {
+    if (!acc) return;
+    const text = acc.lines.join("\n").replace(/\n{3,}/g, "\n\n").trim();
+    if (text) {
+      let head = "";
+      for (const re of TITLE_RES) { head = acc.lines.find(x => re.test(x.trim())) || ""; if (head) break; }
+      head = head || acc.lines.find(x => HEAD_RE.test(x.trim())) || acc.lines.find(x => x.trim()) || "";
+      out.push({ title: (label ? label + "・" : "") + pageTag(acc.p0, acc.p1) + firstLine(head, 22), text, page: acc.p0 || undefined });
+    }
+    acc = null;
+  };
+  for (const b of blocks) {
+    if (b.len > CHUNK * 2.2) { // a very long block: cut it at line ends
+      push();
+      let part = { lines: [], len: 0, p0: b.p0, p1: b.p1 };
+      for (const s of b.lines) {
+        if (part.len + s.length > CHUNK && part.len > CHUNK * 0.5) { acc = part; push(); part = { lines: [], len: 0, p0: b.p0, p1: b.p1 }; }
+        part.lines.push(s); part.len += s.length + 1;
+      }
+      acc = part; push(); continue;
+    }
+    if (acc && acc.len + b.len > CHUNK) push();
+    if (!acc) acc = { lines: [], len: 0, p0: b.p0, p1: b.p1 };
+    acc.lines.push(...b.lines); acc.len += b.len; if (b.p1) acc.p1 = b.p1;
+  }
+  push();
+  return out;
+}
+function chunkText(text, label) {
+  const clean = String(text).replace(/\r/g, "");
+  if (!clean.trim()) return [];
+  return smartChunk(clean.split("\n").map(t => ({ t, page: 0 })), label);
+}
+
+/* ---------- parsers ---------- */
+async function parsePdf(file, onProgress) {
+  await loadScript(LIB.pdfWorker);
+  await loadScript(LIB.pdf);
+  const lib = window.pdfjsLib;
+  lib.GlobalWorkerOptions.workerSrc = LIB.pdfWorker[0];
+  const pdf = await lib.getDocument({ data: new Uint8Array(await file.arrayBuffer()), cMapUrl: "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/cmaps/", cMapPacked: true, isEvalSupported: false }).promise;
+  const sections = []; let imgPages = 0;
+  const badPages = [];
+  const renderPage = async (page, p, t, why) => {
+    try {
+      const vp = page.getViewport({ scale: 1.6 });
+      const c = document.createElement("canvas"); c.width = vp.width; c.height = vp.height;
+      await page.render({ canvasContext: c.getContext("2d"), viewport: vp }).promise;
+      const blob = await new Promise(r => c.toBlob(r, "image/jpeg", 0.85));
+      sections.push({ title: `p.${p}・（${why}）`, text: t, image: blob, imageUrl: URL.createObjectURL(blob), page: p });
+      imgPages++;
+    } catch (e) {
+      sections.push({ title: `p.${p}・（無法讀取）`, text: t || `（第 ${p} 頁無法讀取，可以改用「貼上文字」把這頁的內容貼進來。）`, page: p });
+      badPages.push(p);
+    }
+  };
+  // pass 1: read every page's text
+  const pages = [];
+  for (let p = 1; p <= pdf.numPages; p++) {
+    onProgress && onProgress(`讀取第 ${p} / ${pdf.numPages} 頁…`);
+    let t = "";
+    try {
+      const page = await pdf.getPage(p);
+      const tc = await page.getTextContent();
+      for (const it of tc.items) { t += it.str; if (it.hasEOL) t += "\n"; }
+      t = t.replace(/[ \t]+\n/g, "\n").trim();
+    } catch (e) { t = null; }
+    const chars = (t || "").replace(/\s/g, "");
+    const junk = (chars.match(/[\uE000-\uF8FF\uFFFD\u0000-\u001F]/g) || []).length;
+    const garbled = chars.length > 0 && junk / chars.length > 0.2;
+    pages.push({ p, t, picture: t === null || chars.length < 25 || garbled, garbled });
+  }
+  // pass 2: text runs are split by topic/question; picture pages stay in place
+  let run = [];
+  const flushRun = () => { if (run.length) sections.push(...smartChunk(run)); run = []; };
+  for (const pg of pages) {
+    if (!pg.picture) { for (const t of pg.t.split("\n")) run.push({ t, page: pg.p }); continue; }
+    flushRun();
+    onProgress && onProgress(`把第 ${pg.p} 頁轉成圖片…`);
+    if (imgPages >= 60) { sections.push({ title: `p.${pg.p}・（掃描頁）`, text: pg.garbled ? "" : (pg.t || ""), page: pg.p }); continue; }
+    let page = null; try { page = await pdf.getPage(pg.p); } catch (e) {}
+    if (!page) { sections.push({ title: `p.${pg.p}・（無法讀取）`, text: `（第 ${pg.p} 頁無法讀取，可以改用「貼上文字」把這頁的內容貼進來。）`, page: pg.p }); badPages.push(pg.p); continue; }
+    await renderPage(page, pg.p, pg.garbled ? "" : (pg.t || ""), pg.garbled ? "文字無法辨識，改看圖片" : "掃描頁");
+  }
+  flushRun();
+  const kind = `PDF（${pdf.numPages} 頁` + (imgPages ? `，${imgPages} 頁以圖片顯示` : "") + (badPages.length ? `，第 ${badPages.join("、")} 頁讀不到` : "") + "）";
+  return { sections, kind };
+}
+async function parseDocx(file) {
+  await loadScript(LIB.mammoth);
+  const r = await window.mammoth.convertToHtml({ arrayBuffer: await file.arrayBuffer() });
+  const dom = new DOMParser().parseFromString(r.value, "text/html");
+  // split on headings when present
+  const sections = []; let cur = { title: "", text: "" };
+  const push = () => { if (cur.text.trim()) sections.push(...(cur.text.length > CHUNK * 1.4 ? chunkText(cur.text, cur.title) : [{ title: cur.title || firstLine(cur.text), text: cur.text.trim() }])); };
+  for (const el of dom.body.children) {
+    const txt = el.tagName === "TABLE" ? [...el.rows].map(r => [...r.cells].map(c => c.textContent.trim()).join(" ｜ ")).join("\n") : el.textContent.trim();
+    if (/^H[1-3]$/.test(el.tagName)) { push(); cur = { title: txt.slice(0, 24), text: txt + "\n\n" }; }
+    else if (txt) {
+      cur.text += txt + "\n\n";
+      if (cur.text.length > CHUNK && !/^H/.test(el.tagName)) { push(); cur = { title: "", text: "" }; }
+    }
+  }
+  push();
+  return { sections, kind: "Word 文件" };
+}
+async function parsePptx(file) {
+  await loadScript(LIB.jszip);
+  const zip = await window.JSZip.loadAsync(await file.arrayBuffer());
+  const slides = Object.keys(zip.files).filter(n => /^ppt\/slides\/slide\d+\.xml$/.test(n)).sort((a, b) => +a.match(/\d+/)[0] - +b.match(/\d+/)[0]);
+  const sections = [];
+  for (let i = 0; i < slides.length; i++) {
+    const xml = new DOMParser().parseFromString(await zip.file(slides[i]).async("string"), "application/xml");
+    const paras = [...xml.getElementsByTagName("a:p")].map(p => [...p.getElementsByTagName("a:t")].map(t => t.textContent).join("")).filter(Boolean);
+    const notesName = `ppt/notesSlides/notesSlide${i + 1}.xml`;
+    let notes = "";
+    if (zip.file(notesName)) {
+      const nx = new DOMParser().parseFromString(await zip.file(notesName).async("string"), "application/xml");
+      notes = [...nx.getElementsByTagName("a:t")].map(t => t.textContent).join("").replace(/^\d+$/, "");
+    }
+    const text = paras.join("\n") + (notes.trim() ? "\n\n【講者備註】" + notes.trim() : "");
+    if (text.trim()) sections.push({ title: `投影片 ${i + 1}・${firstLine(text, 16)}`, text });
+  }
+  // merge tiny slides so each section has enough to explain
+  const merged = []; for (const s of sections) { const last = merged[merged.length - 1]; if (last && last.text.length + s.text.length < 600) { last.text += "\n\n――――\n" + s.text; last.title = last.title.replace(/・.*$/, "") + "–" + s.title.match(/\d+/)[0]; } else merged.push({ ...s }); }
+  return { sections: merged, kind: `PowerPoint（${slides.length} 張投影片）` };
+}
+async function parseSheet(file) {
+  await loadScript(LIB.xlsx);
+  const wb = window.XLSX.read(await file.arrayBuffer(), { type: "array" });
+  const sections = [];
+  for (const name of wb.SheetNames) {
+    const csv = window.XLSX.utils.sheet_to_csv(wb.Sheets[name], { blankrows: false });
+    const lines = csv.split("\n"); let part = [], n = 1;
+    for (const l of lines) { part.push(l); if (part.join("\n").length > CHUNK) { sections.push({ title: `工作表「${name}」第 ${n++} 部分`, text: part.join("\n") }); part = []; } }
+    if (part.length) sections.push({ title: `工作表「${name}」` + (n > 1 ? ` 第 ${n} 部分` : ""), text: part.join("\n") });
+  }
+  return { sections, kind: `試算表（${wb.SheetNames.length} 個工作表）` };
+}
+async function parseEpub(file) {
+  await loadScript(LIB.jszip);
+  const zip = await window.JSZip.loadAsync(await file.arrayBuffer());
+  const container = new DOMParser().parseFromString(await zip.file("META-INF/container.xml").async("string"), "application/xml");
+  const opfPath = container.getElementsByTagName("rootfile")[0].getAttribute("full-path");
+  const base = opfPath.includes("/") ? opfPath.replace(/[^/]+$/, "") : "";
+  const opf = new DOMParser().parseFromString(await zip.file(opfPath).async("string"), "application/xml");
+  const items = {}; for (const it of opf.getElementsByTagName("item")) items[it.getAttribute("id")] = it.getAttribute("href");
+  const sections = [];
+  for (const ref of opf.getElementsByTagName("itemref")) {
+    const href = items[ref.getAttribute("idref")]; if (!href) continue;
+    const f = zip.file(decodeURIComponent(base + href)); if (!f) continue;
+    const doc = new DOMParser().parseFromString(await f.async("string"), "text/html");
+    doc.querySelectorAll("p,h1,h2,h3,h4,li,div,br").forEach(el => el.append("\n"));
+    const h = doc.querySelector("h1,h2,h3");
+    sections.push(...chunkText(doc.body ? doc.body.textContent : "", h ? h.textContent.trim().slice(0, 14) : ""));
+  }
+  return { sections, kind: "電子書（EPUB）" };
+}
+async function parsePlain(file, ext) {
+  let t = await file.text();
+  if (ext === "html" || ext === "htm") {
+    const d = new DOMParser().parseFromString(t, "text/html");
+    d.querySelectorAll("script,style").forEach(e => e.remove());
+    d.querySelectorAll("p,h1,h2,h3,h4,li,div,br,tr").forEach(el => el.append("\n"));
+    t = d.body.textContent;
+  }
+  return { sections: chunkText(t), kind: ext.toUpperCase() + " 文字檔" };
+}
+async function parseImage(file) {
+  return { sections: [{ title: file.name, text: "", image: file, imageUrl: URL.createObjectURL(file) }], kind: "圖片" };
+}
+
+async function openFile(file) {
+  const ext = (file.name.split(".").pop() || "").toLowerCase();
+  const body = $("#readerBody");
+  body.innerHTML = `<div class="status"><span class="spin"></span><span id="parseMsg">正在讀取「${esc(file.name)}」…</span></div>`;
+  const onProgress = m => { const el = $("#parseMsg"); if (el) el.textContent = m; };
+  try {
+    let r;
+    if (ext === "pdf") r = await parsePdf(file, onProgress);
+    else if (ext === "docx") r = await parseDocx(file);
+    else if (ext === "pptx") r = await parsePptx(file);
+    else if (["xlsx", "xls", "csv", "ods"].includes(ext)) r = ext === "csv" ? await parsePlain(file, ext) : await parseSheet(file);
+    else if (ext === "epub") r = await parseEpub(file);
+    else if (["png", "jpg", "jpeg", "webp"].includes(ext)) r = await parseImage(file);
+    else if (["doc", "ppt"].includes(ext)) throw new Error("舊版 ." + ext + " 格式無法在瀏覽器讀取，請用 Office 另存成 ." + ext + "x 或 PDF 再上傳。");
+    else r = await parsePlain(file, ext || "txt");
+    if (!r.sections.length) throw new Error("這個檔案裡找不到可以讀的文字。如果是掃描圖片，請改存成 PDF 或圖片再試。");
+    loadDoc({ title: file.name.replace(/\.[^.]+$/, ""), kind: r.kind, sections: r.sections });
+  } catch (e) {
+    body.innerHTML = `<div class="drop"><p class="err">${esc(e.message || "讀取失敗，請換一個檔案試試。")}</p><p>可以重新選擇檔案，或把檔案拖曳到這裡。</p></div>`;
+  }
+}
+
+
+/* ---------- state ---------- */
+const S = { clozeLevel: 8, clozeFirst: false, clozeOnlyForgot: false, peek: false, cursor: null, doc: null, book: null, prog: {}, idx: 0, tab: "points", notes: {}, overview: null, overviewErr: "", busy: {}, chat: [], reading: null };
+let sample = null;
+let aiState = "pending"; // pending | ready | off
+let aiPromise = null;
+let activeCtl = null;
+const store = {
+  get(k, d) { try { const v = localStorage.getItem("shuban." + k); return v === null ? d : v; } catch (e) { return d; } },
+  set(k, v) { try { localStorage.setItem("shuban." + k, v); } catch (e) {} }
+};
+$("#mode").value = store.get("mode", "白話入門");
+$("#rate").value = store.get("rate", "1"); if (!$("#rate").value) $("#rate").value = "1"; $("#rate2").value = $("#rate").value;
+$("#autoSpeak").checked = store.get("autoSpeak", "1") === "1";
+$("#autoNext").checked = store.get("autoNext", "0") === "1";
+$("#follow").checked = store.get("follow", "1") === "1";
+$("#readLang").value = store.get("readLang", "auto");
+$("#pitch").value = store.get("pitch", "1");
+$("#readLang").addEventListener("change", e => store.set("readLang", e.target.value));
+$("#pitch").addEventListener("change", e => store.set("pitch", e.target.value));
+$("#autoMark").checked = store.get("autoMark", "1") === "1";
+$("#autoMark").addEventListener("change", e => { store.set("autoMark", e.target.checked ? "1" : "0"); if (e.target.checked) autoMark(); });
+let lastSel = "";
+document.addEventListener("selectionchange", () => {
+  const s = getSelection(); if (!s || s.isCollapsed || !s.anchorNode) return;
+  const box = document.querySelector("#readerBody .txt"); if (!box || !box.contains(s.anchorNode)) return;
+  lastSel = s.toString().trim();
+});
+function markHint(msg) { const el = $("#markState"); if (el) { el.textContent = msg; clearTimeout(markHint.t); markHint.t = setTimeout(markStatus, 4000); } }
+function addMark() {
+  if (!S.doc) return;
+  const sec = S.doc.sections[S.idx];
+  let q = ((getSelection() && getSelection().toString()) || lastSel).trim(); lastSel = "";
+  if (!q) { markHint("👉 先在原文選取一句話（手機長按後拖曳），再按「✏️ 劃重點」"); return; }
+  if (q.length > 240) q = q.slice(0, 240);
+  if (!sec.text.includes(q)) { q = q.replace(/\s+/g, " "); if (!sec.text.includes(q)) { markHint("選取的範圍要在同一段原文裡喔，請再選一次"); return; } }
+  const n = note(S.idx);
+  if (!n.points || n.points.example) n.points = { summary: "", points: [], terms: [] };
+  if (n.points.points.some(p => p.quote === q)) { markHint("這句已經劃過了"); return; }
+  n.points.points.push({ quote: q, why: "" });
+  n.points.points.sort((a, b) => sec.text.indexOf(a.quote) - sec.text.indexOf(b.quote));
+  try { getSelection().removeAllRanges(); } catch (e) {}
+  renderReader(); renderPane(); Saver.schedule();
+}
+$("#markBtn").addEventListener("pointerdown", e => e.preventDefault()); // keep the selection when the button is tapped
+$("#markBtn").addEventListener("click", addMark);
+$("#follow").addEventListener("change", e => store.set("follow", e.target.checked ? "1" : "0"));
+$("#mode").addEventListener("change", e => store.set("mode", e.target.value));
+function setRate(v) {
+  $("#rate").value = v; $("#rate2").value = v; store.set("rate", v);
+  // already reading the original aloud: pick up at the current sentence with the new speed
+  if (TTS.owner && TTS.owner.id === "read" && S.reading) { const at = S.reading[0]; readOriginal(true, at); }
+  if (typeof saveSettings === "function") saveSettings();
+}
+$("#rate").addEventListener("change", e => setRate(e.target.value));
+$("#rate2").addEventListener("change", e => setRate(e.target.value));
+$("#autoSpeak").addEventListener("change", e => { store.set("autoSpeak", e.target.checked ? "1" : "0"); if (!e.target.checked) TTS.stop(); });
+$("#autoNext").addEventListener("change", e => store.set("autoNext", e.target.checked ? "1" : "0"));
+
+const note = i => (S.notes[i] ||= { points: null, pointsErr: "", explain: null, explainErr: "", quiz: null, quizErr: "", cloze: null, clozeErr: "" });
+
+/* ---------- speech (browser built-in text-to-speech), Chinese / English / Japanese ---------- */
+const LANGS = {
+  zh: { label: "中文", test: v => /^(zh|cmn)/i.test(v.lang), fallback: "zh-TW", sample: "你好，我是書伴，今天我們一起讀書吧。" },
+  en: { label: "英文", test: v => /^en/i.test(v.lang), fallback: "en-US", sample: "Hello, I'm your reading buddy. Let's learn together." },
+  ja: { label: "日文", test: v => /^ja/i.test(v.lang), fallback: "ja-JP", sample: "こんにちは。一緒に勉強しましょう。" }
+};
+// higher = sounds more natural
+function voiceScore(v, lang) {
+  const n = v.name; let s = 0;
+  if (/Natural|Neural|Online/i.test(n)) s += 60;
+  if (/Premium|優化|高品質/i.test(n)) s += 50;
+  if (/Enhanced|增強|加強/i.test(n)) s += 40;
+  if (/Google/i.test(n)) s += 30;
+  if (/network/i.test(n)) s += 35;
+  if (/Siri/i.test(n)) s += 45;
+  if (v.localService === false) s += 8;
+  if (lang === "zh") { if (/zh[-_]TW/i.test(v.lang)) s += 25; else if (/Hant|HK/i.test(v.lang)) s += 8; }
+  if (lang === "en" && /en[-_]US/i.test(v.lang)) s += 6;
+  if (/compact|eSpeak/i.test(n)) s -= 40;
+  return s;
+}
+function voiceTag(v, lang) {
+  const sc = voiceScore(v, lang) - (lang === "zh" && /zh[-_]TW/i.test(v.lang) ? 25 : 0);
+  return sc >= 50 ? "★自然" : sc >= 30 ? "☆清晰" : "";
+}
+const TTS = {
+  ok: typeof window.speechSynthesis !== "undefined" && typeof window.SpeechSynthesisUtterance !== "undefined",
+  voices: { zh: [], en: [], ja: [] }, token: 0, owner: null, pending: 0,
+  noVoice: false, cancelAt: 0, q: [], qTimer: null,
+  // Chrome on Android drops speech queued right after cancel(); hold new speech a moment after a cancel
+  say(u, tok) {
+    const wait = this.cancelAt + 300 - Date.now();
+    if (wait <= 0 && !this.q.length) { speechSynthesis.speak(u); return; }
+    this.q.push([u, tok]);
+    if (!this.qTimer) this.qTimer = setTimeout(() => {
+      this.qTimer = null; const q = this.q; this.q = [];
+      for (const [x, t] of q) if (t === this.token) { try { speechSynthesis.speak(x); } catch (e) {} }
+    }, Math.max(0, wait));
+  },
+  hardCancel() { try { speechSynthesis.cancel(); } catch (e) {} this.cancelAt = Date.now(); },
+  pickVoice(lang) {
+    if (this.noVoice) return null;
+    const sel = $("#voice-" + lang), list = this.voices[lang];
+    if (sel && sel.value) { const v = list.find(v => v.voiceURI === sel.value); if (v) return v; }
+    return list[0] || null;
+  },
+  loadVoices() {
+    if (!this.ok) return;
+    const all = speechSynthesis.getVoices();
+    for (const [k, L] of Object.entries(LANGS)) {
+      this.voices[k] = all.filter(L.test).sort((a, b) => voiceScore(b, k) - voiceScore(a, k));
+      const sel = $("#voice-" + k); if (!sel) continue;
+      const saved = store.get("voice." + k, "");
+      sel.innerHTML = `<option value="">自動挑最自然的</option>` + this.voices[k].map(v => {
+        const tag = voiceTag(v, k);
+        return `<option value="${esc(v.voiceURI)}">${tag ? tag + " " : ""}${esc(v.name.replace(/^(Microsoft|Google)\s+/, "").replace(/\s*Online \(Natural\)\s*-?\s*/, " "))}（${esc(v.lang)}）</option>`;
+      }).join("");
+      if (saved && this.voices[k].some(v => v.voiceURI === saved)) sel.value = saved;
+      const note = $("#vnote-" + k);
+      if (note) note.textContent = this.voices[k].length ? "" : `這台裝置沒有${L.label}聲音，會改用預設聲音`;
+    }
+    const best = this.pickVoice("zh");
+    $("#voiceHint").hidden = !!(best && voiceScore(best, "zh") >= 55);
+  },
+  // short, speakable sentences with their position in the text: [{text,start,end}]
+  sentences(text) {
+    const out = []; let st = 0;
+    const push = (a, b) => {
+      let s = text.slice(a, b);
+      while (s.length > 120) {
+        let cut = Math.max(s.lastIndexOf("，", 100), s.lastIndexOf("、", 100), s.lastIndexOf(", ", 100), s.lastIndexOf("、", 100));
+        if (cut < 30) cut = s.lastIndexOf(" ", 100);
+        if (cut < 30) cut = 100;
+        out.push({ text: s.slice(0, cut + 1), start: a, end: a + cut + 1 }); a += cut + 1; s = s.slice(cut + 1);
+      }
+      if (s.trim()) out.push({ text: s, start: a, end: b });
+    };
+    for (let i = 0; i < text.length; i++) {
+      const c = text[i], nx = text[i + 1] || "";
+      let end = /[。！？!?；;\n]/.test(c) || (c === "." && (!nx || (/\s/.test(nx) && (/[A-Za-z)\]"']/.test(text[i - 1] || "") || /[A-Z]/.test(text[i + 2] || "")))));
+      if (end) { let j = i + 1; while (j < text.length && /[」』）)"'”’。！？!?]/.test(text[j])) j++; push(st, j); st = j; i = j - 1; }
+    }
+    if (st < text.length) push(st, text.length);
+    return out;
+  },
+  // split one sentence into runs that each get the right voice
+  runs(text) {
+    const mode = $("#readLang").value;
+    if (mode === "en" || mode === "ja") return [{ lang: mode, text }];
+    if (mode === "zh" || !$("#multiLang").checked) return [{ lang: "zh", text }];
+    if (/[぀-ヿㇰ-ㇿ]/.test(text)) return [{ lang: "ja", text }];
+    // in a Japanese document, kanji-only lines are Japanese too
+    if (S.jaHint && /[一-鿿]/.test(text) && !/[A-Za-z]{3,}/.test(text)) return [{ lang: "ja", text }];
+    const out = []; const re = /[A-Za-z][A-Za-z0-9'’\-.]*(?:[ \t,:;&\/()+-]+[A-Za-z0-9][A-Za-z0-9'’\-.]*)*/g; let m, pos = 0;
+    while ((m = re.exec(text))) {
+      const w = m[0].replace(/[\s(]+$/, "");
+      if ((w.match(/[A-Za-z]/g) || []).length < 2) continue;
+      if (m.index > pos) out.push({ lang: "zh", text: text.slice(pos, m.index) });
+      out.push({ lang: "en", text: w }); pos = m.index + w.length; re.lastIndex = pos;
+    }
+    if (pos < text.length) out.push({ lang: "zh", text: text.slice(pos) });
+    // fold punctuation-only pieces into their neighbour so the voice does not hiccup
+    const merged = [];
+    for (const r of out) {
+      const silent = !r.text.replace(/[\s，。、！？「」（）()：:；;,.\-—…·]/g, "");
+      if (silent && merged.length) merged[merged.length - 1].text += r.text;
+      else if (merged.length && merged[merged.length - 1].lang === r.lang) merged[merged.length - 1].text += r.text;
+      else merged.push({ ...r });
+    }
+    return merged.length ? merged : [{ lang: "zh", text }];
+  },
+  started: false, lastErr: "", watch: null,
+  stop() {
+    const busy = this.pending > 0;
+    this.token++; this.pending = 0; clearTimeout(this.watch); this.watch = null;
+    // iOS drops the next utterance after a needless cancel(), so only cancel when something is queued
+    if (this.ok && (busy || speechSynthesis.speaking || speechSynthesis.pending)) this.hardCancel();
+    const o = this.owner; this.owner = null;
+    if (o && o.onStop) o.onStop();
+    updateSpeakUI();
+  },
+  begin(owner) { this.stop(); this.owner = owner; this.started = false; this.lastErr = ""; updateSpeakUI(); return this.token; },
+  // if nothing is heard a few seconds after speech was queued, explain how to fix it
+  arm(tok) {
+    if (this.watch || this.started) return;
+    // phones sometimes leave the speech engine stuck after the page was in the background:
+    // after 2.5 s of silence, reset the engine and try once more; only then explain, without stopping anything
+    this.watch = setTimeout(() => {
+      this.watch = null;
+      if (tok !== this.token || !this.owner || this.started) return;
+      const retry = this.owner.retry;
+      if (retry && !this.owner.retried) {
+        this.owner.retried = true;
+        this.hardCancel(); try { speechSynthesis.resume(); } catch (e) {}
+        this.pending = 0; retry(); return;
+      }
+      this.watch = setTimeout(() => { this.watch = null; if (tok === this.token && this.owner && !this.started) speechHelp(this.lastErr || "silent"); }, 2500);
+    }, 2500);
+  },
+  calib: (() => { try { return JSON.parse(store.get("calib", "{}")) || {}; } catch (e) { return {}; } })(),
+  // onProgress(indexInText, length): fires as each word/character is spoken (engine word events, else an estimate)
+  enqueue(tok, text, onStart, onEnd, onProgress) {
+    if (!this.ok || tok !== this.token || !text.replace(/[\s，。、！？「」]/g, "")) { onEnd && onEnd(); return; }
+    let off = 0; const parts = [];
+    for (const r of this.runs(text)) { const x = { ...r, off }; off += r.text.length; if (r.text.replace(/[\s，。、！？「」（）()]/g, "")) parts.push(x); }
+    if (!parts.length) { onEnd && onEnd(); return; }
+    const rate = parseFloat($("#rate").value) || 1;
+    const BASE = { zh: 4.3, en: 13, ja: 6.5 };
+    parts.forEach((r, k) => {
+      const u = new SpeechSynthesisUtterance(r.text);
+      const v = this.pickVoice(r.lang);
+      if (v) { u.voice = v; u.lang = v.lang; } else u.lang = LANGS[r.lang].fallback;
+      u.rate = rate; u.pitch = parseFloat($("#pitch").value) || 1;
+      this.pending++;
+      let timer = null, t0 = 0, gotB = false, lastB = 0, lastPos = 0;
+      const cps = () => BASE[r.lang] * rate * (this.calib[r.lang] || 1);
+      u.onstart = () => {
+        if (tok !== this.token) return;
+        this.started = true; clearTimeout(this.watch); this.watch = null; const nt = document.getElementById("noTTS"); if (nt && nt.dataset.kind !== "unsupported") nt.hidden = true;
+        if (k === 0 && onStart) onStart();
+        t0 = performance.now();
+        if (onProgress) {
+          onProgress(r.off, 0);
+          // estimate runs all the time; it takes over whenever the voice stops reporting words
+          timer = setInterval(() => {
+            if (tok !== this.token) { clearInterval(timer); return; }
+            const now = performance.now();
+            if (gotB && now - lastB < 900) return;
+            const est = Math.floor((now - (gotB ? lastB : t0)) / 1000 * cps()) + (gotB ? lastPos : 0);
+            const p = Math.min(r.text.length - 1, Math.max(lastPos, est));
+            if (p !== lastPos || !gotB) { lastPos = p; onProgress(r.off + p, 0); }
+          }, 70);
+        }
+      };
+      u.onboundary = e => {
+        if (tok !== this.token || !onProgress) return;
+        if (e.name && e.name !== "word") return;
+        gotB = true; lastB = performance.now(); lastPos = Math.max(lastPos, e.charIndex || 0);
+        onProgress(r.off + (e.charIndex || 0), e.charLength || 0);
+      };
+      const last = k === parts.length - 1;
+      const done = () => {
+        clearInterval(timer);
+        if (tok !== this.token) return;
+        if (!gotB && t0 && r.text.length > 8) { // learn how fast this device really speaks
+          const secs = (performance.now() - t0) / 1000;
+          if (secs > 0.5) { const ratio = (r.text.length / secs) / (BASE[r.lang] * rate); this.calib[r.lang] = Math.max(0.5, Math.min(2, (this.calib[r.lang] || 1) * 0.5 + ratio * 0.5)); store.set("calib", JSON.stringify(this.calib)); }
+        }
+        this.pending = Math.max(0, this.pending - 1);
+        if (last && onEnd) onEnd();
+        if (!this.pending && this.owner && this.owner.waitMore !== true) this.finish(tok);
+      };
+      u.onend = () => { this.started = true; done(); };
+      u.onerror = e => {
+        if (e.error === "interrupted" || e.error === "canceled") return;
+        if (tok !== this.token) return;
+        this.lastErr = e.error || "error";
+        // the chosen voice may be missing on this phone (common on Android): retry everything with the system default voice
+        if (u.voice && !this.noVoice && this.owner && this.owner.retry && e.error !== "not-allowed") {
+          this.noVoice = true; const retry = this.owner.retry; this.owner.retried = false;
+          clearTimeout(this.watch); this.watch = null; this.token++; this.pending = 0; this.hardCancel();
+          setTimeout(retry, 0); return;
+        }
+        done();
+      };
+      this.say(u, tok);
+    });
+    this.arm(tok);
+  },
+  finish(tok) { if (tok !== this.token) return; const o = this.owner; this.owner = null; if (o && o.onDone) o.onDone(); else if (o && o.onStop) o.onStop(); updateSpeakUI(); }
+};
+document.addEventListener("visibilitychange", () => {
+  if (document.visibilityState === "visible" && TTS.ok && !TTS.owner) { try { speechSynthesis.cancel(); speechSynthesis.resume(); } catch (e) {} }
+});
+if (TTS.ok) {
+  // some browsers silently pause the speech queue; nudge it if that happens while we are speaking
+  setInterval(() => { try { if (TTS.owner && speechSynthesis.paused) speechSynthesis.resume(); } catch (e) {} }, 1500);
+  TTS.loadVoices();
+  speechSynthesis.onvoiceschanged = () => TTS.loadVoices();
+  ["zh", "en", "ja"].forEach(k => $("#voice-" + k).addEventListener("change", e => store.set("voice." + k, e.target.value)));
+  $("#multiLang").checked = store.get("multiLang", "1") === "1";
+  $("#multiLang").addEventListener("change", e => store.set("multiLang", e.target.checked ? "1" : "0"));
+  $("#voicePanel").addEventListener("click", e => {
+    const b = e.target.closest("[data-try]"); if (!b) return;
+    const k = b.dataset.try;
+    if (TTS.owner && TTS.owner.id === "try-" + k) { TTS.stop(); return; }
+    const tok = TTS.begin({ id: "try-" + k });
+    const u = new SpeechSynthesisUtterance(LANGS[k].sample);
+    const v = TTS.pickVoice(k); if (v) { u.voice = v; u.lang = v.lang; } else u.lang = LANGS[k].fallback;
+    u.rate = parseFloat($("#rate").value) || 1; u.pitch = parseFloat($("#pitch").value) || 1; TTS.pending++;
+    const fin = () => { if (tok === TTS.token) { TTS.pending = 0; TTS.finish(tok); } };
+    u.onend = fin;
+    u.onerror = e => {
+      if (tok === TTS.token && u.voice && e.error !== "interrupted" && e.error !== "canceled" && e.error !== "not-allowed") {
+        const u2 = new SpeechSynthesisUtterance(LANGS[k].sample); u2.lang = LANGS[k].fallback; u2.rate = u.rate; u2.pitch = u.pitch;
+        u2.onend = u2.onerror = fin; TTS.say(u2, tok); return;
+      }
+      fin();
+    };
+    TTS.say(u, tok);
+  });
+  ["zh", "en", "ja"].forEach(k => $("#voice-" + k).addEventListener("change", () => { TTS.noVoice = false; }));
+  $("#diagBtn").addEventListener("click", () => {
+    const out = $("#diagOut"); out.hidden = false;
+    const all = speechSynthesis.getVoices();
+    const zh = all.filter(LANGS.zh.test);
+    const lines = [
+      "瀏覽器：" + (/Android/i.test(navigator.userAgent) ? "Android " : /iPhone|iPad/i.test(navigator.userAgent) ? "iOS " : "") + ((navigator.userAgent.match(/(Chrome|CriOS|Edg|Firefox|Version)\/[\d.]+/) || [""])[0]),
+      "支援朗讀：是",
+      `聲音數量：共 ${all.length} 個，中文 ${zh.length} 個` + (zh.length ? `（${zh.slice(0, 3).map(v => v.name + " " + v.lang).join("、")}${zh.length > 3 ? "…" : ""}）` : ""),
+      `引擎狀態：speaking=${speechSynthesis.speaking} pending=${speechSynthesis.pending} paused=${speechSynthesis.paused}`
+    ];
+    const show = () => { out.textContent = lines.join("\n"); };
+    TTS.stop(); TTS.hardCancel(); try { speechSynthesis.resume(); } catch (e) {}
+    const test = (label, withVoice, next) => {
+      lines.push(label + "：測試中…"); show(); const i = lines.length - 1;
+      const u = new SpeechSynthesisUtterance("測試，一二三。");
+      const v = withVoice ? TTS.voices.zh[0] : null;
+      if (v) { u.voice = v; u.lang = v.lang; } else u.lang = "zh-TW";
+      let got = false;
+      const end = msg => { if (got) return; got = true; clearTimeout(t); lines[i] = label + "：" + msg; show(); next && setTimeout(next, 400); };
+      const t = setTimeout(() => end("❌ 5 秒內沒有任何反應（語音引擎沒有回應）"), 5000);
+      u.onstart = () => { lines[i] = label + "：▶ 開始唸了…"; show(); };
+      u.onend = () => end("✅ 有唸完（如果沒聽到，請檢查音量／靜音）");
+      u.onerror = e => end("❌ 錯誤：" + (e.error || "未知"));
+      TTS.say(u, TTS.token);
+    };
+    test("測試 1（系統預設聲音）", false, TTS.voices.zh.length ? () => test("測試 2（" + TTS.voices.zh[0].name + "）", true) : null);
+  });
+} else { $("#voicePanel").hidden = true; setTimeout(() => speechHelp("unsupported"), 0); }
+
+// markdown → plain speech text
+function speakable(src) {
+  return src.replace(/^\s*\|?[\s:|-]+\|[\s:|-]*$/gm, "")
+    .replace(/\|/g, "，").replace(/^#{1,6}\s*/gm, "").replace(/^\s*[-*•]\s+/gm, "").replace(/^\s*>\s?/gm, "")
+    .replace(/\*\*|__|`|\*/g, "").replace(/→|->/g, "，所以").replace(/\n{2,}/g, "。\n").replace(/。{2,}/g, "。");
+}
+// speak text that is still streaming in: call feed(fullText) repeatedly, then end(fullText)
+function streamSpeaker(id, onStop) {
+  const tok = TTS.begin({ id, onStop, waitMore: true });
+  let consumed = 0;
+  const take = (full, final) => {
+    if (tok !== TTS.token) return;
+    const plain = speakable(full);
+    let upto = plain.length;
+    if (!final) { const m = plain.slice(consumed).match(/^[\s\S]*[。！？!?；\n]/); if (!m) return; upto = consumed + m[0].length; }
+    const chunk = plain.slice(consumed, upto); consumed = upto;
+    for (const s of TTS.sentences(chunk)) TTS.enqueue(tok, s.text);
+  };
+  return {
+    feed: full => take(full, false),
+    end: full => { take(full, true); if (TTS.owner && tok === TTS.token) { TTS.owner.waitMore = false; if (!TTS.pending) TTS.finish(tok); } },
+    get alive() { return tok === TTS.token; }
+  };
+}
+let helpShown = false;
+function speechHelp(reason) {
+  const n = $("#noTTS"); n.hidden = false; n.dataset.kind = reason;
+  if (reason === "unsupported") { n.innerHTML = "這個瀏覽器（或 LINE、Facebook 等 App 裡的內建畫面）不支援語音朗讀。請改用 <b>Chrome（Android）</b>或 <b>Safari（iPhone）</b>打開書伴。"; return; }
+  const why = reason === "not-allowed" ? "（手機擋下了這次朗讀，通常是因為不是由你直接點按鈕開始）"
+    : reason === "synthesis-unavailable" || reason === "voice-unavailable" || reason === "language-unavailable" ? "（手機找不到可用的語音）" : "";
+  n.innerHTML = md(`按了朗讀但沒有聲音${why}。可以依序試試：\n1. **調大「媒體音量」**，iPhone 也要檢查側邊的靜音開關。\n2. **用手機瀏覽器開啟**：在 LINE 等 App 裡直接點開的畫面常常不能朗讀，請改用 Android 的 **Chrome** 或 iPhone 的 **Safari**。\n3. **確認手機有中文語音**：Android 在「設定 → 文字轉語音輸出」確認引擎（例如 Google 語音服務）並下載中文語音；iPhone 在「設定 → 輔助使用 → 朗讀內容 → 聲音」下載中文聲音。選單名稱依機型不同。\n4. 打開「🔈 聲音設定」按 **🩺 聲音檢查**，看看是哪一步出問題。`);
+}
+function speakText(id, text, onStop) {
+  if (!TTS.ok) { speechHelp("unsupported"); return; }
+  const sp = streamSpeaker(id, onStop); sp.end(text);
+}
+function updateSpeakUI() {
+  const o = TTS.owner;
+  $("#readBtn").textContent = o && o.id === "read" ? "■ 停止朗讀" : "🔊 朗讀原文";
+  $("#readBtn").classList.toggle("on", !!(o && o.id === "read"));
+  $("#guideBtn").textContent = o && o.id === "guide" ? "■ 停止導讀" : "🎧 語音導讀這段";
+  $("#guideBtn").classList.toggle("on", !!(o && o.id === "guide"));
+  document.querySelectorAll("[data-say]").forEach(b => { const on = o && o.id === b.dataset.say; b.textContent = on ? "■ 停止" : "🔊 唸給我聽"; });
+  document.querySelectorAll("[data-try]").forEach(b => { b.textContent = o && o.id === "try-" + b.dataset.try ? "■ 停止" : "▶ 試聽"; });
+  document.querySelectorAll(".msg.bot").forEach(m => m.classList.toggle("speaking", !!(o && o.id === "msg" + m.dataset.k)));
+}
+
+/* ---------- read the original aloud, sentence by sentence ---------- */
+function readOriginal(fromStart = true, startAt = 0) {
+  if (!TTS.ok) { speechHelp("unsupported"); return; }
+  const sec = S.doc.sections[S.idx];
+  if (!sec.text.trim()) { pushBot("這一頁是圖片，我沒辦法直接朗讀原文。按「🎧 語音導讀這段」，我看完圖片後講給你聽。", { local: true }); return; }
+  const list = TTS.sentences(sec.text).filter(x => x.end > startAt);
+  const text = sec.text, follow = $("#follow").checked;
+  const tok = TTS.begin({ id: "read", retry: () => { const o = TTS.owner; const at = S.reading ? S.reading[0] : startAt; readOriginal(true, at); if (TTS.owner) TTS.owner.retried = true; void o; }, onStop: () => { S.reading = null; S.cursor = null; renderReader(); }, onDone: () => {
+    S.reading = null; S.cursor = null; renderReader(); markDone(S.idx);
+    if ($("#autoNext").checked && S.idx < S.doc.sections.length - 1) { go(S.idx + 1); readOriginal(); }
+  }});
+  list.forEach(s => TTS.enqueue(tok, s.text, () => {
+    S.reading = [s.start, s.end]; S.cursor = null; paintReading();
+  }, null, follow ? (i, len) => {
+    const a = s.start + i, rng = cursorRange(text, a, len, s.end);
+    if (S.cursor && S.cursor[0] === rng[0] && S.cursor[1] === rng[1]) return;
+    if (S.cursor && rng[0] < S.cursor[0] && rng[0] >= s.start) return; // never run backwards
+    S.cursor = rng; paintReading();
+  } : null));
+  if (!list.length) TTS.finish(tok);
+}
+
+/* ---------- reader ---------- */
+function loadDoc(doc) {
+  TTS.stop(); if (activeCtl) activeCtl.abort();
+  if (S.book) Saver.flush();
+  S.book = null; S.prog = {};
+  { const all = doc.sections.map(x => x.text).join("").slice(0, 20000); const kana = (all.match(/[぀-ヿ]/g) || []).length, han = (all.match(/[一-鿿]/g) || []).length; S.jaHint = kana > 5 && kana / (kana + han + 1) > 0.12; }
+  S.doc = doc; S.idx = 0; S.notes = {}; S.overview = null; S.overviewErr = ""; S.chat = []; S.busy = {};
+  if (doc.sample) S.notes[0] = { ...note(0), points: SAMPLE_POINTS };
+  const total = doc.sections.reduce((a, s) => a + s.text.length, 0);
+  $("#docTitle").textContent = doc.title;
+  $("#docMeta").innerHTML = `<span class="tag">${esc(doc.kind)}</span><span>共 ${doc.sections.length} 段</span><span>約 ${total.toLocaleString()} 字</span>`;
+  $("#secSel").innerHTML = doc.sections.map((s, i) => `<option value="${i}">${i + 1}. ${esc(s.title)}</option>`).join("");
+  S.chat.push({ role: "assistant", local: true, content: doc.sample
+    ? `嗨！我是書伴 📚\n\n左邊是一份**範例文件**，讓你先試試看。你可以：\n- 按 **🔊 朗讀原文**，我會一句一句唸，同時標出唸到哪裡\n- 按 **🎧 語音導讀這段**，我用說的講解給你聽\n- 或直接在下面打字問我任何問題\n\n準備好了就按右上角「開啟文件」，換成你自己的講義。`
+    : `我讀好了《${doc.title}》，共 ${doc.sections.length} 段。\n\n要我先**導讀全文**讓你掌握架構，還是直接**從第 1 段開始**陪你讀？點下面的按鈕或直接跟我說都可以。` });
+  if (S.tab !== "cloze") S.tab = "points";
+  document.querySelectorAll("#tabs button").forEach(b => b.setAttribute("aria-selected", b.dataset.tab === S.tab));
+  go(0, true);
+  refreshSelectLabels();
+  if (doc.sample) { renderTrack(); if (Cloud.mode !== "pending") setSync("sample"); } else restoreBook(doc);
+}
+function go(i, silent) {
+  if (!S.doc) return;
+  const ni = Math.max(0, Math.min(S.doc.sections.length - 1, i));
+  if (TTS.owner && TTS.owner.id !== "read") TTS.stop();
+  if (TTS.owner && TTS.owner.id === "read" && ni !== S.idx && !silent) TTS.stop();
+  const changed = ni !== S.idx; S.idx = ni; S.reading = null;
+  $("#secSel").value = S.idx;
+  $("#prev").disabled = S.idx === 0;
+  $("#next").disabled = S.idx === S.doc.sections.length - 1;
+  $("#prog").style.width = ((S.idx + 1) / S.doc.sections.length * 100) + "%";
+  if (changed) S.chat.push({ role: "divider", content: `翻到第 ${S.idx + 1} 段：${S.doc.sections[S.idx].title}` });
+  renderReader(); renderPane(); renderChips(); renderTrack();
+  autoMark();
+  if (S.book) Saver.schedule();
+  $("#readerBody").scrollTop = 0;
+}
+function findMarks(text, points) {
+  const ranges = [];
+  (points || []).forEach((p, n) => {
+    const q = (p.quote || "").trim(); if (q.length < 2) return;
+    let at = text.indexOf(q), len = q.length;
+    if (at < 0) { const short = q.slice(0, Math.min(14, q.length)); at = text.indexOf(short); len = short.length; }
+    if (at >= 0) ranges.push([at, at + len, n]);
+  });
+  ranges.sort((a, b) => a[0] - b[0]);
+  const out = []; let end = -1;
+  for (const r of ranges) if (r[0] >= end) { out.push(r); end = r[1]; }
+  return out;
+}
+// the stretch to light up: the engine's word, an English word, or one Chinese/Japanese character
+function cursorRange(text, a, len, max) {
+  if (len > 0) return [a, Math.min(a + len, max)];
+  if (/[A-Za-z0-9]/.test(text[a] || "")) {
+    let b = a, c = a;
+    while (c > 0 && /[A-Za-z0-9'’\-]/.test(text[c - 1])) c--;
+    while (b < max && /[A-Za-z0-9'’\-]/.test(text[b])) b++;
+    return [c, b];
+  }
+  return [a, Math.min(a + 1, max)];
+}
+function paintReading() {
+  const box = $("#readerBody .txt"); if (!box) { renderReader(); return; }
+  const sec = S.doc.sections[S.idx], pts = note(S.idx).points;
+  box.innerHTML = renderText(sec.text, pts ? pts.points : [], S.reading, S.cursor);
+  const body = $("#readerBody"), el = body.querySelector(".rd-cur") || body.querySelector(".reading");
+  if (!el) return;
+  const r = el.getBoundingClientRect(), br = body.getBoundingClientRect();
+  if (r.top < br.top + 40 || r.bottom > br.bottom - 40) body.scrollTop += (r.top - br.top) - body.clientHeight / 3;
+}
+function renderText(text, points, reading, cursor) {
+  const marks = findMarks(text, points);
+  const cuts = new Set([0, text.length]);
+  marks.forEach(m => { cuts.add(m[0]); cuts.add(m[1]); });
+  if (reading) { cuts.add(reading[0]); cuts.add(Math.min(reading[1], text.length)); }
+  if (reading && cursor) { cuts.add(cursor[0]); cuts.add(Math.min(cursor[1], text.length)); }
+  const arr = [...cuts].sort((a, b) => a - b); let out = "";
+  for (let k = 0; k < arr.length - 1; k++) {
+    const a = arr[k], b = arr[k + 1]; if (a >= b) continue;
+    let piece = esc(text.slice(a, b));
+    const m = marks.find(m => a >= m[0] && b <= m[1]);
+    if (m) piece = `<mark data-n="${m[2]}">${piece}${b === m[1] ? `<sup data-k="${m[2] + 1}"></sup>` : ""}</mark>`;
+    if (reading && a >= reading[0] && b <= reading[1]) {
+      const cls = !cursor ? "" : b <= cursor[0] ? " rd-done" : a >= cursor[0] && b <= cursor[1] ? " rd-cur" : "";
+      piece = `<span class="reading${cls}">${piece}</span>`;
+    }
+    out += piece;
+  }
+  return out;
+}
+function markStatus() {
+  const el = $("#markState"); if (!el || !S.doc) return;
+  const n = note(S.idx);
+  el.textContent = S.busy[S.idx + "points"] ? "✏️ 書伴正在劃重點…" : n.points ? `✏️ 已劃 ${n.points.points.length} 個重點` : n.pointsErr ? "⚠ 劃重點失敗，按「✏️ 劃重點」再試" : "";
+}
+function renderReader() {
+  const sec = S.doc.sections[S.idx];
+  const pts = note(S.idx).points;
+  let html = "";
+  if (sec.imageUrl) html += `<img src="${sec.imageUrl}" alt="${esc(sec.title)}">`;
+  if (sec.text) html += `<div class="txt">${renderText(sec.text, pts ? pts.points : [], S.reading, S.cursor)}</div>`;
+  $("#readerBody").innerHTML = html;
+  markStatus();
+}
+$("#readerBody").addEventListener("click", e => {
+  const m = e.target.closest("mark"); if (!m) return;
+  selectTab("points");
+  const li = document.querySelector(`#pane li[data-n="${m.dataset.n}"]`); if (li) li.scrollIntoView({ block: "nearest", behavior: "smooth" });
+});
+
+/* ---------- tiny markdown renderer (escapes everything first) ---------- */
+function inline(s) {
+  return esc(s).replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>").replace(/`([^`]+)`/g, "<code>$1</code>").replace(/(^|[^*])\*([^*\n]+)\*/g, "$1<em>$2</em>");
+}
+function md(src) {
+  const lines = String(src).replace(/\r/g, "").split("\n"); let out = "", list = null, para = [];
+  const endPara = () => { if (para.length) { out += `<p>${para.map(inline).join("<br>")}</p>`; para = []; } };
+  const endList = () => { if (list) { out += `</${list}>`; list = null; } };
+  for (let i = 0; i < lines.length; i++) {
+    const l = lines[i];
+    if (/^\s*\|.*\|\s*$/.test(l) && i + 1 < lines.length && /^\s*\|[\s:|-]+\|\s*$/.test(lines[i + 1])) {
+      endPara(); endList();
+      const row = r => r.trim().replace(/^\||\|$/g, "").split("|").map(c => c.trim());
+      let t = `<div class="tblwrap"><table><tr>${row(l).map(c => `<th>${inline(c)}</th>`).join("")}</tr>`; i += 2;
+      while (i < lines.length && /^\s*\|.*\|\s*$/.test(lines[i])) { t += `<tr>${row(lines[i]).map(c => `<td>${inline(c)}</td>`).join("")}</tr>`; i++; }
+      out += t + "</table></div>"; i--; continue;
+    }
+    let m;
+    if (!l.trim()) { endPara(); endList(); continue; }
+    if ((m = l.match(/^#{1,6}\s+(.*)/))) { endPara(); endList(); out += `<h4>${inline(m[1])}</h4>`; continue; }
+    if ((m = l.match(/^>\s?(.*)/))) { endPara(); endList(); out += `<blockquote>${inline(m[1])}</blockquote>`; continue; }
+    if ((m = l.match(/^\s*[-*•]\s+(.*)/))) { endPara(); if (list !== "ul") { endList(); out += "<ul>"; list = "ul"; } out += `<li>${inline(m[1])}</li>`; continue; }
+    if ((m = l.match(/^\s*\d+[.)、]\s*(.*)/))) { endPara(); if (list !== "ol") { endList(); out += "<ol>"; list = "ol"; } out += `<li>${inline(m[1])}</li>`; continue; }
+    if (/^\s*(---|___|\*\*\*)\s*$/.test(l)) { endPara(); endList(); continue; }
+    endList(); para.push(l);
+  }
+  endPara(); endList();
+  return out;
+}
+
+/* ---------- Claude helpers ---------- */
+function setAI(st) {
+  aiState = st;
+  const el = $("#aiState");
+  el.className = "state " + (st === "ready" ? "ready" : st === "off" ? "off" : "");
+  el.lastElementChild.textContent = st === "ready" ? "書伴已上線" : st === "off" ? "AI 無法使用" : "正在連線 Claude…";
+  $("#noAI").hidden = true;
+  $("#askBtn").disabled = st === "off";
+  $("#guideBtn").disabled = st === "off";
+}
+async function ensureAI() {
+  if (aiState === "ready") return true;
+  if (aiState === "off") return false;
+  await aiPromise; return aiState === "ready";
+}
+function errText(e) {
+  switch (e && e.code) {
+    case "not_granted": case "sampling_disabled": case "not_declared": case "capability_disabled": case "capability_removed":
+      setAI("off"); return "你沒有允許書伴使用 Claude，所以這次無法回答。重新整理頁面後可以再按一次「允許」。";
+    case "rate_limited": return "使用次數暫時達到上限，請過幾分鐘再試。";
+    case "prompt_too_large": return "這一段內容太長，請改選比較短的段落。";
+    case "refused": return "Claude 無法處理這段內容，請換個問法或換一段。";
+    case "session_expired": return "登入已過期，請重新登入 Claude 後再試。";
+    case "invalid_json": return "回覆格式不完整，請再按一次。";
+    case "empty_completion": return "這次沒有得到回覆，請再試一次。";
+    case "image_rejected": case "images_unavailable": return "這張圖片無法送出（太大或格式不支援），請改用 JPG／PNG。";
+    case "cancelled": return "";
+    default: return "連線出了點問題，請稍後再試一次。";
+  }
+}
+const MODE_HINT = {
+  "白話入門": "讀者是初學者：用生活化的比喻、避免艱深術語，術語第一次出現時用一句話解釋。",
+  "考試準備": "讀者在準備考試：點出容易考的觀念、易混淆處與判斷口訣。",
+  "法規條文": "這可能是法規或制度文件：說明要件、適用情形、例外與實務常見爭點；不可自行補充原文沒有的條號或數字，並提醒以主管機關最新公告為準。",
+  "職場應用": "讀者想用在工作上：說明在實際職場或工會事務中怎麼運用，舉具體情境。"
+};
+const RULES = () => `你是「書伴」，一位親切、有耐心的陪讀老師，正在陪使用者讀一份文件。一律用台灣繁體中文。講解方式：${$("#mode").value}——${MODE_HINT[$("#mode").value]}\n只根據提供的原文講解；原文沒寫、你也不確定的內容，要明說「原文沒有提到」或「我不確定」，不要猜。`;
+function ctx(i = S.idx) {
+  const sec = S.doc.sections[i];
+  return `文件標題：${S.doc.title}\n目前段落：第 ${i + 1} / ${S.doc.sections.length} 段「${sec.title}」\n` +
+    (sec.text.trim() ? `＜段落原文開始＞\n${sec.text.slice(0, 9000)}\n＜段落原文結束＞` : "（這一段是附上的圖片／掃描頁，請直接閱讀圖片內容。）");
+}
+const imgOpt = (i = S.idx) => { const s = S.doc.sections[i]; return s.image ? { images: [s.image] } : {}; };
+const outline = () => S.doc.sections.slice(0, 80).map((s, k) => `${k + 1}. ${s.title}`).join("\n");
+
+/* ---------- conversation ---------- */
+function pushBot(text, extra = {}) { S.chat.push({ role: "assistant", content: text, ...extra }); if (S.tab === "chat") renderPane(); }
+function setBusyUI(on) {
+  $("#askBtn").hidden = on; $("#stopBtn").hidden = !on;
+}
+async function converse(userText, { spoken = false, display } = {}) {
+  if (S.busy.chat) return;
+  if (S.tab !== "chat") selectTab("chat");
+  const i = S.idx;
+  S.chat.push({ role: "user", content: display || userText, realContent: userText, sec: i });
+  renderChips();
+  const bot = { role: "assistant", content: "", sec: i, pending: true };
+  S.chat.push(bot); const k = S.chat.length - 1;
+  S.busy.chat = true; setBusyUI(true); renderPane();
+  // speak along while the answer streams in
+  const wantVoice = TTS.ok && (spoken || $("#autoSpeak").checked);
+  let sp = null;
+  if (wantVoice) { sp = streamSpeaker(spoken ? "guide" : "msg" + k); }
+  if (!(await ensureAI())) { bot.pending = false; bot.err = "AI 對話目前無法使用。"; S.busy.chat = false; setBusyUI(false); renderPane(); if (sp) TTS.stop(); return; }
+  const history = S.chat.filter(m => (m.role === "user" || m.role === "assistant") && !m.local && m !== bot && (m.content || "").trim()).slice(-12)
+    .map(m => ({ role: m.role, content: m.role === "user" ? `（我正在讀第 ${m.sec + 1} 段）${m.realContent || m.content}` : m.content }));
+  if (history.length && history[history.length - 1].role === "user") history[history.length - 1].content = `（我正在讀第 ${i + 1} 段）${userText}`;
+  const spokenRule = spoken || wantVoice ? "\n你的回覆會被語音唸出來：用口語、自然的句子，少用表格與符號，條列最多 4 點。" : "";
+  const turns = [
+    { role: "user", content: `${RULES()}${spokenRule}\n回答通常 120～350 字；使用者要求詳細講解時可以更長。若使用者回答你出的題目，先說對或錯，再說明原因。\n\n文件目錄：\n${outline()}\n\n${ctx(i)}\n\n接下來我們會邊讀邊聊。` },
+    { role: "assistant", content: "好，我讀完這段了，我們開始吧！" },
+    ...history
+  ];
+  activeCtl = new AbortController();
+  try {
+    const r = await sample(turns, { ...imgOpt(i), cache: false, signal: activeCtl.signal, onText: ({ text }) => {
+      bot.content = text; bot.pending = false;
+      if (sp && sp.alive) sp.feed(text);
+      paintMsg(k);
+    }});
+    bot.content = r.text; if (r.truncated) bot.content += "\n\n> 回覆太長被截斷，可以請我分段說。";
+    if (sp && sp.alive) sp.end(r.text);
+    if (spoken) markDone(i);
+  } catch (e) {
+    bot.content = e.text || ""; bot.err = errText(e);
+    if (sp) { if (e.code === "cancelled" || !bot.content) TTS.stop(); else if (sp.alive) sp.end(bot.content); }
+    if (!bot.content && !bot.err) S.chat.splice(k - 1, 2);
+  }
+  bot.pending = false; S.busy.chat = false; activeCtl = null; setBusyUI(false);
+  Saver.schedule();
+  if (S.tab === "chat") renderPane();
+}
+function paintMsg(k) {
+  if (S.tab !== "chat") return;
+  const el = document.querySelector(`#pane .msg[data-k="${k}"] .bubble`);
+  if (!el) { renderPane(); return; }
+  el.innerHTML = md(S.chat[k].content);
+  const pane = $("#pane"); if (pane.scrollHeight - pane.scrollTop - pane.clientHeight < 140) pane.scrollTop = pane.scrollHeight;
+}
+function guideSection() {
+  if (TTS.owner && TTS.owner.id === "guide") { TTS.stop(); if (activeCtl) activeCtl.abort(); return; }
+  converse(`請用「語音導讀」的方式，像老師在旁邊陪讀一樣講解這一段：先用一兩句話說這段在講什麼，再依順序把重點講清楚、舉一個例子，最後問我一個小問題確認我懂了（先不要給答案）。全長約 300～500 字，口語化。`, { spoken: true, display: `🎧 語音導讀第 ${S.idx + 1} 段` });
+}
+function renderChips() {
+  if (!S.doc) return;
+  const first = S.chat.filter(m => m.role === "user").length === 0;
+  const chips = first && !S.doc.sample
+    ? [["🧭 先導讀全文", "overview"], ["從第 1 段開始陪我讀", "ask:請陪我讀這一段：先用三句話說重點，再問我有沒有哪裡不懂。"], ["🎧 語音導讀這段", "guide"]]
+    : [["這段重點是？", "ask:這段的重點是什麼？請條列。"], ["舉個例子", "ask:可以用一個生活或職場中的例子說明這段嗎？"], ["考我一題", "ask:針對這段出一題簡答題考我，先不要給答案，等我回答後再講評。"], ["🎧 語音導讀", "guide"], ["下一段 ›", "next"]];
+  $("#quickChips").innerHTML = chips.map(([t, a]) => `<button class="btn small" type="button" data-act="${esc(a)}">${esc(t)}</button>`).join("");
+}
+$("#quickChips").addEventListener("click", e => {
+  const b = e.target.closest("[data-act]"); if (!b || !S.doc) return;
+  const a = b.dataset.act;
+  if (a === "guide") { TTS.ok && warmUp(); guideSection(); }
+  else if (a === "next") { if (S.idx < S.doc.sections.length - 1) { go(S.idx + 1); pushBot(`來到第 ${S.idx + 1} 段「${S.doc.sections[S.idx].title}」。要我導讀，還是你先自己讀、有問題再問我？`, { local: true }); } else pushBot("這已經是最後一段了，辛苦了！要不要到「全文導讀」再複習一次全貌？", { local: true }); }
+  else if (a === "overview") { selectTab("overview"); if (!S.overview) runOverview(); }
+  else if (a.startsWith("ask:")) converse(a.slice(4), { display: b.textContent });
+});
+// iOS/Safari only allow speech that starts inside a tap; a silent cue unlocks it
+function warmUp() { if (!/iPhone|iPad|iPod|Macintosh/.test(navigator.userAgent) || /Chrome|Android/.test(navigator.userAgent)) return; try { const u = new SpeechSynthesisUtterance(" "); u.volume = 0; speechSynthesis.speak(u); } catch (e) {} }
+
+/* ---------- section tools: points, explain, quiz, overview ---------- */
+// highlight key sentences on their own when a section of the user's document opens
+function autoMark() {
+  return; // the app has no AI: highlights are made by hand
+  if (!S.doc || S.doc.sample || !$("#autoMark").checked || aiState === "off") return;
+  const i = S.idx, n = note(i), sec = S.doc.sections[i];
+  if (n.points || n.pointsErr || S.busy[i + "points"] || !(sec.text.trim() || sec.image)) return;
+  doPoints();
+}
+async function doPoints() {
+  const i = S.idx, n = note(i); S.busy[i + "points"] = true; n.pointsErr = ""; renderPane(); markStatus();
+  if (!(await ensureAI())) { S.busy[i + "points"] = false; n.pointsErr = "AI 目前無法使用。"; renderPane(); return; }
+  try {
+    const r = await sample.json(`${RULES()}\n\n請幫我在下面這段原文「劃重點」。\n${ctx(i)}\n\n只回覆一個 JSON 物件，格式：\n{"summary":"兩句話以內的段落大意","points":[{"quote":"從原文『逐字複製』的關鍵句，10～60字，不可改寫","why":"為什麼重要，一句話"}],"terms":[{"term":"專有名詞","meaning":"白話解釋"}]}\npoints 3～6 個，依原文順序；terms 0～5 個。若是圖片，quote 請抄寫圖中文字。`, { ...imgOpt(i), cache: { gcTime: 86400000 } });
+    if (!r || !Array.isArray(r.points)) throw { code: "invalid_json" };
+    n.points = { summary: String(r.summary || ""), points: r.points.map(p => ({ quote: String(p.quote || ""), why: String(p.why || "") })), terms: Array.isArray(r.terms) ? r.terms.map(t => ({ term: String(t.term || ""), meaning: String(t.meaning || "") })) : [] };
+    Saver.schedule();
+  } catch (e) { n.pointsErr = errText(e); }
+  S.busy[i + "points"] = false;
+  if (i === S.idx) { renderReader(); renderPane(); }
+  markStatus();
+}
+async function runExplain(fresh) {
+  const i = S.idx, n = note(i), key = i + "explain";
+  S.busy[key] = true; n.explain = ""; n.explainErr = ""; renderPane();
+  if (!(await ensureAI())) { S.busy[key] = false; n.explainErr = "AI 目前無法使用。"; renderPane(); return; }
+  const prompt = `${RULES()}\n\n請「逐步講解」這一段，讓我真的理解，而不只是背答案。\n${ctx(i)}\n\n格式（用 Markdown，總長約 400～700 字）：\n## 先講結論（2～3 句）\n## 一步一步拆解（依原文順序，每步：原文在說什麼 → 白話意思 → 為什麼）\n## 舉個例子\n## 容易誤會的地方\n## 一句話記住它` + (fresh ? `\n\n（請換一種講法，例如不同的比喻或順序。#${Date.now() % 10000}）` : "");
+  try {
+    const r = await sample(prompt, { ...imgOpt(i), cache: fresh ? false : { gcTime: 86400000 }, onText: ({ text }) => { n.explain = text; if (i === S.idx && S.tab === "explain") { const el = $("#stream"); if (el) el.innerHTML = md(text); else renderPane(); } } });
+    n.explain = r.text + (r.truncated ? "\n\n> 回覆太長被截斷，可以改問更小的範圍。" : "");
+  } catch (e) { n.explain = e.text || ""; n.explainErr = errText(e); }
+  S.busy[key] = false; Saver.schedule(); if (i === S.idx) renderPane();
+}
+async function runOverview(fresh) {
+  S.busy.overview = true; S.overview = ""; S.overviewErr = ""; renderPane();
+  if (!(await ensureAI())) { S.busy.overview = false; S.overviewErr = "AI 目前無法使用。"; renderPane(); return; }
+  let all = "", cut = false;
+  for (const [k, s] of S.doc.sections.entries()) { const piece = `\n【第 ${k + 1} 段：${s.title}】\n${s.text}\n`; if (all.length + piece.length > 60000) { cut = true; break; } all += piece; }
+  const prompt = `${RULES()}\n\n請為整份文件寫「導讀」，幫讀者在開始細讀前掌握全貌。\n文件標題：${S.doc.title}\n${cut ? "（文件很長，以下只附前半部；請在導讀開頭說明只涵蓋前半部。）\n" : ""}＜全文開始＞${all}＜全文結束＞\n\n格式（用 Markdown）：\n## 一句話看懂\n## 文件架構（條列，標出對應段落編號）\n## 必讀重點 3～5 點\n## 建議閱讀順序\n## 讀完可以自我檢查的 3 個問題` + (fresh ? `\n\n（請換一種組織方式。#${Date.now() % 10000}）` : "");
+  try {
+    const r = await sample(prompt, { cache: fresh ? false : { gcTime: 86400000 }, onText: ({ text }) => { S.overview = text; if (S.tab === "overview") { const el = $("#stream"); if (el) el.innerHTML = md(text); else renderPane(); } } });
+    S.overview = r.text + (r.truncated ? "\n\n> 回覆太長被截斷。" : "");
+  } catch (e) { S.overview = e.text || ""; S.overviewErr = errText(e); }
+  S.busy.overview = false; Saver.schedule(); renderPane();
+}
+async function doQuiz() {
+  const i = S.idx, n = note(i); S.busy[i + "quiz"] = true; n.quizErr = ""; renderPane();
+  if (!(await ensureAI())) { S.busy[i + "quiz"] = false; n.quizErr = "AI 目前無法使用。"; renderPane(); return; }
+  try {
+    const r = await sample.json(`${RULES()}\n\n請根據下面這段原文出 3 題單選題，考「理解」而非死背字句，錯誤選項要像真的。\n${ctx(i)}\n\n只回覆 JSON 陣列：[{"q":"題目","options":["A","B","C","D"],"answer":0,"explain":"為什麼這個是對的，並點出原文依據"}]（answer 是正確選項的索引，從 0 開始）`, { ...imgOpt(i), cache: false });
+    if (!Array.isArray(r) || !r.length) throw { code: "invalid_json" };
+    n.quiz = r.filter(x => x && Array.isArray(x.options)).map(x => ({ q: String(x.q || ""), options: x.options.map(String), answer: Math.max(0, Math.min(x.options.length - 1, Number(x.answer) || 0)), explain: String(x.explain || ""), picked: null }));
+  } catch (e) { n.quizErr = errText(e); }
+  S.busy[i + "quiz"] = false; if (i === S.idx) renderPane();
+}
+
+/* ---------- cloze (keyword blanks) ---------- */
+function localWords(text) {
+  const seen = new Set(), out = [];
+  const add = (w, hint) => { w = w.trim(); if (w.length < 2 || w.length > 14 || seen.has(w)) return; seen.add(w); out.push({ w, hint }); };
+  for (const m of text.matchAll(/([一-鿿]{2,10})（([A-Za-z][A-Za-z0-9 \-]{1,40})）/g)) { add(m[1], "中文名稱"); add(m[2], "英文名稱"); }
+  for (const m of text.matchAll(/「([^」\n]{2,12})」/g)) add(m[1], "引號裡的詞");
+  for (const m of text.matchAll(/\d+(?:\.\d+)?\s*(?:%|％|日|天|個月|月|年|小時|元|人|條|項|次|倍)/g)) add(m[0], "數字");
+  return out.slice(0, 15);
+}
+function setCloze(i, words, src) {
+  const text = S.doc.sections[i].text, ws = [], used = [];
+  for (const x of words) {
+    const w = String(x.w || "").trim();
+    if (w.length < 1 || !text.includes(w) || used.some(u => u.includes(w) || w.includes(u))) continue;
+    used.push(w); ws.push({ w, hint: String(x.hint || "").slice(0, 16) });
+  }
+  const prev = note(i).cloze;
+  note(i).cloze = { words: ws, st: {}, forgot: prev ? prev.forgot.filter(f => ws.some(x => x.w === f)) : [], src };
+}
+async function doCloze() {
+  const i = S.idx, n = note(i), sec = S.doc.sections[i];
+  if (!sec.text.trim()) { n.clozeErr = "這一段是圖片或掃描頁，沒有可以挖空的文字。"; renderPane(); return; }
+  S.busy[i + "cloze"] = true; n.clozeErr = ""; renderPane();
+  if (!(await ensureAI())) {
+    const mine = (n.points && !n.points.example ? n.points.points : []).map(p => p.quote.trim()).filter(q => q.length >= 2 && q.length <= 14).map(w => ({ w, hint: "你劃的重點" }));
+    setCloze(i, [...mine, ...localWords(sec.text)], "local");
+    if (!n.cloze.words.length) { n.cloze = null; n.clozeErr = "這一段找不到可以自動挖空的詞。先在原文選取幾個關鍵詞、按「✏️ 劃重點」，再回來挖空。"; }
+    S.busy[i + "cloze"] = false; renderPane(); return;
+  }
+  try {
+    const r = await sample.json(`${RULES()}\n\n請從下面這段原文挑出最值得「挖空背誦」的關鍵詞，用來做克漏字（填空）複習，刺激主動回想。\n${ctx(i)}\n\n規則：\n1. 每個關鍵詞必須是原文中「一字不差、連續出現」的字串，2～12 字。\n2. 優先挑：專有名詞、定義的核心詞、數字與期限、條件、結論、對比的兩端。不要挑「的、是、可以、例如」這類普通詞。\n3. 詞與詞不可重疊（不要同時挑「監督式學習」和「學習」）。\n4. 依重要性由高到低排列，挑 8～15 個。\n5. hint 是不洩漏答案的提示，10 字以內，例如「英文名稱」「預測連續數值的那類」「幾天內」。\n只回覆 JSON 陣列：[{"w":"關鍵詞","hint":"提示"}]`, { cache: { gcTime: 86400000 } });
+    if (!Array.isArray(r)) throw { code: "invalid_json" };
+    setCloze(i, r, "ai");
+    if (!n.cloze.words.length) { setCloze(i, localWords(sec.text), "local"); if (!n.cloze.words.length) { n.cloze = null; throw { code: "invalid_json" }; } }
+    Saver.schedule();
+  } catch (e) { n.clozeErr = errText(e); }
+  S.busy[i + "cloze"] = false; if (i === S.idx) renderPane();
+}
+function clozeActive(c) {
+  if (S.clozeOnlyForgot) return c.words.filter(x => c.forgot.includes(x.w));
+  return S.clozeLevel ? c.words.slice(0, S.clozeLevel) : c.words;
+}
+function renderCloze(i, n) {
+  const sec = S.doc.sections[i], c = n.cloze;
+  const act = clozeActive(c);
+  const reEsc = s => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  let body = esc(sec.text);
+  if (act.length) {
+    const sorted = [...act].sort((a, b) => b.w.length - a.w.length);
+    const re = new RegExp(sorted.map(x => reEsc(x.w)).join("|"), "g");
+    let html = "", last = 0;
+    for (const m of sec.text.matchAll(re)) {
+      html += esc(sec.text.slice(last, m.index));
+      const x = act.find(y => y.w === m[0]), k = c.words.indexOf(x), st = c.forgot.includes(x.w) && c.st[x.w] ? "forgot" : c.st[x.w] ? "seen" : "";
+      const label = st ? esc(x.w) : `${S.clozeFirst ? esc([...x.w][0]) : ""}${"＿".repeat(Math.max(2, Math.min(5, [...x.w].length - (S.clozeFirst ? 1 : 0))))}${x.hint ? `<small>${esc(x.hint)}</small>` : ""}`;
+      html += `<button type="button" class="blank ${st}" data-w="${k}" aria-label="${st ? esc(x.w) + (st === "forgot" ? "，標記為忘了" : "") : "空格，提示：" + esc(x.hint || "無")}">${label}</button>`;
+      last = m.index + m[0].length;
+    }
+    body = html + esc(sec.text.slice(last));
+  }
+  const opened = act.filter(x => c.st[x.w]).length, forgotHere = act.filter(x => c.st[x.w] && c.forgot.includes(x.w)).length;
+  let h = `<div class="cz-how">先<b>自己想</b>空格是什麼 → 點一下看答案。<br>想對了就繼續；<b>沒想起來就再點一下</b>，標成紅色 ✗，之後可以「只考忘記的」。上面的原文會先模糊，避免偷看。</div>`;
+  h += `<div class="cz-bar"><label>空格數 <select id="czLevel"><option value="5" ${S.clozeLevel === 5 ? "selected" : ""}>5 個（暖身）</option><option value="8" ${S.clozeLevel === 8 ? "selected" : ""}>8 個（標準）</option><option value="0" ${S.clozeLevel === 0 ? "selected" : ""}>全部 ${c.words.length} 個（挑戰）</option></select></label>
+    <button class="btn small ${S.clozeFirst ? "on" : ""}" id="czFirst" type="button">💡 提示首字</button>
+    <button class="btn small ${S.clozeOnlyForgot ? "on" : ""}" id="czForgot" type="button" ${c.forgot.length || S.clozeOnlyForgot ? "" : "disabled"}>只考忘記的（${c.forgot.length}）</button>
+    <button class="btn small ${S.peek ? "on" : ""}" id="czPeek" type="button">${S.peek ? "🙈 再藏起原文" : "👀 偷看原文"}</button></div>`;
+  if (S.clozeOnlyForgot && !act.length) h += `<p class="summary">這一段沒有忘記的詞了，太棒了！🎉</p>`;
+  h += `<div class="cloze">${body}</div>`;
+  h += `<div class="cz-score">已翻開 <b>${opened}</b> / ${act.length}${forgotHere ? `・忘了 <b style="color:var(--bad)">${forgotHere}</b>` : ""}${opened === act.length && act.length ? (forgotHere ? "　→ 按「重來一次」再挑戰紅色的詞" : "　全部想起來了！👏") : ""}</div>`;
+  h += `<div class="row" style="margin-top:10px"><button class="btn small" id="czAll" type="button">全部揭曉</button><button class="btn small primary" id="czReset" type="button">↻ 重來一次</button><button class="btn small" id="czNew" type="button">↻ 重新挑詞（含新劃的重點）</button></div>`;
+  if (c.src === "local") h += `<p class="why" style="margin-top:8px">空格來自：你劃的短重點、括號裡的名詞、引號和數字。想考別的詞，就在原文劃成重點，再按「重新挑詞」。</p>`;
+  // forgotten words across the whole document
+  const all = [];
+  for (const [k, nn] of Object.entries(S.notes)) if (nn.cloze) for (const f of nn.cloze.forgot) { const x = nn.cloze.words.find(y => y.w === f); if (x) all.push({ k: +k, x }); }
+  if (all.length) {
+    h += `<div class="label" style="margin-top:22px"><span>📌 整份文件的「忘記清單」（${all.length}）——點一下翻開</span></div><div class="cz-list">${all.sort((a, b) => a.k - b.k).map(({ k, x }) => `<div class="it"><button type="button" class="blank" data-flip="${esc(x.w)}">${"＿".repeat(Math.max(2, Math.min(5, [...x.w].length)))}${x.hint ? `<small>${esc(x.hint)}</small>` : ""}</button><span class="sec">第 ${k + 1} 段</span>${k !== i ? `<button class="icon-btn" type="button" data-goto="${k}">去那段 →</button>` : ""}</div>`).join("")}</div>`;
+  }
+  return h;
+}
+
+/* ---------- companion pane ---------- */
+function selectTab(t) {
+  S.tab = t;
+  document.querySelectorAll("#tabs button").forEach(b => b.setAttribute("aria-selected", b.dataset.tab === t));
+  renderPane();
+}
+function emptyState(title, desc, btnId, label) {
+  const btn = aiState === "off" ? `<span class="err">AI 功能需要在 Claude 裡開啟此頁、並允許使用才能用。</span>` : `<button class="btn primary" id="${btnId}" type="button">${label}</button>`;
+  return `<div class="empty"><strong>${title}</strong><span>${desc}</span>${btn}</div>`;
+}
+const busyHtml = msg => `<div class="status"><span class="spin"></span>${msg}</div>`;
+const sayBtn = id => TTS.ok ? `<button class="icon-btn" type="button" data-say="${id}">🔊 唸給我聽</button>` : "";
+
+function renderPane() {
+  const pane = $("#pane"); if (!S.doc) { pane.innerHTML = ""; return; }
+  const i = S.idx, n = note(i);
+  $("#compTitle").textContent = { chat: "和書伴聊這份文件", points: `第 ${i + 1} 段・劃重點`, explain: `第 ${i + 1} 段・逐步講解`, quiz: `第 ${i + 1} 段・考考我`, cloze: `第 ${i + 1} 段・挖空複習`, overview: "全文導讀" }[S.tab];
+  $("#chatDock").hidden = S.tab !== "chat";
+  document.body.classList.toggle("cloze-on", S.tab === "cloze"); document.body.classList.toggle("peek", !!S.peek);
+  document.querySelectorAll("#tabs button").forEach(b => {
+    const t = b.dataset.tab, has = t === "overview" ? !!S.overview : t === "chat" ? false : !!n[t];
+    const label = b.textContent.trim();
+    b.innerHTML = esc(label) + (has ? '<span class="dot" aria-hidden="true"></span>' : "");
+  });
+  let h = "";
+  if (S.tab === "chat") {
+    h = `<div class="chat">${S.chat.map((m, k) => {
+      if (m.role === "divider") return `<div class="divider">${esc(m.content)}</div>`;
+      if (m.role === "user") return `<div class="msg me" data-k="${k}"><div class="bubble">${esc(m.content)}</div></div>`;
+      const body = m.pending ? `<span class="status" style="margin:0"><span class="spin"></span>書伴思考中…</span>` : md(m.content || "");
+      const tools = !m.pending && m.content ? `<div class="who">書伴 ${sayBtn("msg" + k)}</div>` : `<div class="who">書伴</div>`;
+      return `<div class="msg bot" data-k="${k}">${tools}<div class="bubble md">${body}</div>${m.err ? `<p class="err">${esc(m.err)}</p>` : ""}</div>`;
+    }).join("")}</div>`;
+  }
+  else if (S.tab === "points") {
+    const p = n.points;
+    if (p && p.points.length) {
+      if (p.example) h += `<div class="example">這是範例重點。開啟你自己的文件後，在原文<b>選取一句話</b>（手機長按後拖曳、電腦用滑鼠拖曳），再按「✏️ 劃重點」就能自己劃。</div>`;
+      if (p.summary) h += `<div class="label"><span>段落大意</span></div><div class="summary">${esc(p.summary)}</div>`;
+      h += `<div class="label"><span>重點句（點一下可在原文找到）</span>${sayBtn("points")}</div><ol class="points">${p.points.map((x, k) => `<li data-n="${k}"><div><div class="q" data-k="${k}">「${esc(x.quote)}」</div>${x.why ? `<div class="why">${esc(x.why)}</div>` : ""}${p.example ? "" : `<button class="icon-btn pt-del" type="button" data-delpt="${k}" aria-label="刪除這個重點">✕ 刪除</button>`}</div></li>`).join("")}</ol>`;
+      if (p.terms && p.terms.length) h += `<div class="label"><span>名詞小抄</span></div><dl class="terms">${p.terms.map(t => `<dt>${esc(t.term)}</dt><dd>${esc(t.meaning)}</dd>`).join("")}</dl>`;
+      if (!p.example) h += `<p class="why" style="margin-top:14px">💡 劃的重點如果是短詞（14 字以內），會自動變成「🧠 挖空複習」的題目。</p>`;
+    } else h = `<div class="empty"><strong>自己劃重點</strong><span>在原文裡<b>選取一句話</b>（手機：長按後拖曳；電腦：用滑鼠拖曳），再按上方的「✏️ 劃重點」，就會用螢光筆標起來，並列在這裡。</span><span>小技巧：劃「專有名詞、數字、期限」這類短詞，之後可以拿來挖空複習。</span></div>`;
+  }
+  else if (S.tab === "explain" || S.tab === "overview") {
+    const ov = S.tab === "overview";
+    const text = ov ? S.overview : n.explain, err = ov ? S.overviewErr : n.explainErr, busy = ov ? S.busy.overview : S.busy[i + "explain"];
+    if (text || busy) {
+      if (busy && !text) h += busyHtml(ov ? "正在讀完整份文件，整理導讀…（長文件可能要一分鐘）" : "書伴正在想怎麼講比較清楚…");
+      if (text && !busy) h += `<div class="label"><span>${ov ? "全文導讀" : "逐步講解"}</span>${sayBtn(ov ? "overview" : "explain")}</div>`;
+      h += `<div class="md" id="stream">${md(text || "")}</div>`;
+      if (!busy && text && aiState !== "off") h += `<div class="row" style="margin-top:14px"><button class="btn small" id="${ov ? "reOverview" : "reExplain"}" type="button">換個方式再講一次</button><button class="btn small" id="goChat" type="button">有疑問，問書伴 →</button></div>`;
+    } else h = ov
+      ? emptyState("先看全貌再細讀", `書伴會讀完整份「${esc(S.doc.title)}」，告訴你架構、必讀重點和建議的閱讀順序。`, "runOverview", "🧭 產生全文導讀")
+      : emptyState("一步一步講給你聽", `用「${esc($("#mode").value)}」的方式拆解這一段：先講結論、再逐步說明、舉例、提醒易錯處。`, "runExplain", "🎓 開始講解");
+    if (err) h += `<p class="err">${esc(err)}</p>`;
+  }
+  else if (S.tab === "quiz") {
+    if (S.busy[i + "quiz"]) h = busyHtml("正在出題…");
+    else if (n.quiz) {
+      const done = n.quiz.filter(q => q.picked !== null), right = done.filter(q => q.picked === q.answer).length;
+      h = `<div class="quiz">${n.quiz.map((q, k) => `<div class="qz"><h4>${k + 1}. ${esc(q.q)}</h4><div class="opts">${q.options.map((o, j) => { const cls = q.picked === null ? "" : j === q.answer ? "right" : j === q.picked ? "wrong" : ""; return `<button type="button" class="${cls}" data-q="${k}" data-o="${j}" ${q.picked !== null ? "disabled" : ""}>${"ABCDEF"[j] || j + 1}. ${esc(o)}</button>`; }).join("")}</div>${q.picked !== null ? `<div class="exp">${q.picked === q.answer ? "✅ 答對了！" : "❌ 再想想看～"}${esc(q.explain)}</div>` : ""}</div>`).join("")}</div>`;
+      if (done.length === n.quiz.length) h += `<p class="summary" style="margin-top:16px">答對 ${right} / ${n.quiz.length} 題。${right === n.quiz.length ? "這段你已經掌握了，可以進下一段！" : "可以回頭看看標出的重點句，或到「對話」問清楚。"}</p>`;
+      if (aiState !== "off") h += `<div class="row" style="margin-top:12px"><button class="btn small" id="runQuiz" type="button">換一組題目</button></div>`;
+    } else h = emptyState("讀完了？來測一下", "書伴會依這一段出 3 題單選題，答完立刻告訴你為什麼。想用對話方式被考，也可以在「對話」按「考我一題」。", "runQuiz", "📝 出題考我");
+    if (n.quizErr) h += `<p class="err">${esc(n.quizErr)}</p>`;
+  }
+  else if (S.tab === "cloze") {
+    if (S.busy[i + "cloze"]) h = busyHtml("正在挑關鍵詞、幫你挖空…");
+    else if (n.cloze) h = renderCloze(i, n);
+    else {
+      const sec = S.doc.sections[i];
+      h = sec.text.trim()
+        ? `<div class="empty"><strong>把關鍵字挖掉，考你的記憶</strong><span>書伴會把這一段的關鍵詞（你劃的短重點、括號裡的名詞、引號、數字）變成空格。你先在腦中回想，再點開對答案——這叫「主動回想」，比重讀一次記得更牢。</span><button class="btn primary" id="czRun" type="button">🧠 開始挖空複習</button></div>`
+        : `<div class="empty"><strong>這一段沒有文字可以挖空</strong><span>這一段是圖片或掃描頁。可以換到有文字的段落再試。</span></div>`;
+    }
+    if (n.clozeErr) h += `<p class="err">${esc(n.clozeErr)}</p>`;
+  }
+  pane.innerHTML = h;
+  if (S.tab === "chat") pane.scrollTop = pane.scrollHeight;
+  updateSpeakUI();
+}
+
+$("#pane").addEventListener("click", e => {
+  const t = e.target.closest("button,.q"); if (!t || !S.doc) return;
+  const id = t.id, n = note(S.idx);
+  if (t.dataset.say) {
+    const sid = t.dataset.say;
+    if (TTS.owner && TTS.owner.id === sid) { TTS.stop(); return; }
+    let text = "";
+    if (sid.startsWith("msg")) text = S.chat[+sid.slice(3)].content;
+    else if (sid === "explain") text = n.explain;
+    else if (sid === "overview") text = S.overview;
+    else if (sid === "points" && n.points) text = (n.points.summary ? `段落大意：${n.points.summary}\n` : "") + `重點：\n` + n.points.points.map((p, k) => `第${k + 1}點，${p.quote}。${p.why}`).join("\n");
+    speakText(sid, text || ""); return;
+  }
+  if (t.dataset.w !== undefined) {
+    const c = n.cloze, w = c.words[+t.dataset.w].w;
+    if (!c.st[w]) c.st[w] = true;
+    else if (!c.forgot.includes(w)) c.forgot.push(w);
+    else c.forgot = c.forgot.filter(f => f !== w);
+    renderPane(); Saver.schedule(); return;
+  }
+  if (t.dataset.delpt !== undefined) { if (n.points) { n.points.points.splice(+t.dataset.delpt, 1); if (!n.points.points.length) n.points = null; } renderReader(); renderPane(); Saver.schedule(); return; }
+  if (t.dataset.flip !== undefined) { t.textContent = t.dataset.flip; t.classList.add("seen"); return; }
+  if (t.dataset.goto !== undefined) { go(+t.dataset.goto); return; }
+  if (id === "czRun") { doCloze(); return; }
+  if (id === "czNew") { if (aiState === "off") { n.cloze = null; doCloze(); } else doClozeFresh(); return; }
+  if (id === "czReset") { n.cloze.st = {}; S.peek = false; renderPane(); return; }
+  if (id === "czAll") { for (const x of clozeActive(n.cloze)) n.cloze.st[x.w] = true; renderPane(); return; }
+  if (id === "czFirst") { S.clozeFirst = !S.clozeFirst; renderPane(); return; }
+  if (id === "czForgot") { S.clozeOnlyForgot = !S.clozeOnlyForgot; n.cloze.st = {}; renderPane(); return; }
+  if (id === "czPeek") { S.peek = !S.peek; renderPane(); return; }
+  if (id === "runPoints") doPoints();
+  else if (id === "runExplain") runExplain(false);
+  else if (id === "reExplain") runExplain(true);
+  else if (id === "runOverview") runOverview(false);
+  else if (id === "reOverview") runOverview(true);
+  else if (id === "runQuiz") doQuiz();
+  else if (id === "goExplain") { selectTab("explain"); if (!n.explain) runExplain(false); }
+  else if (id === "goQuiz") { selectTab("quiz"); if (!n.quiz) doQuiz(); }
+  else if (id === "goChat") { selectTab("chat"); $("#askBox").focus(); }
+  else if (t.dataset.q !== undefined) { const q = n.quiz[+t.dataset.q]; q.picked = +t.dataset.o; renderPane(); recordQuiz(S.idx); }
+  else if (t.classList.contains("q")) {
+    const m = document.querySelector(`#readerBody mark[data-n="${t.dataset.k}"]`);
+    if (m) { m.scrollIntoView({ block: "center", behavior: "smooth" }); m.classList.add("flash"); setTimeout(() => m.classList.remove("flash"), 1400); }
+  }
+});
+
+$("#pane").addEventListener("change", e => { if (e.target.id === "czLevel") { S.clozeLevel = +e.target.value; S.clozeOnlyForgot = false; const c = note(S.idx).cloze; if (c) c.st = {}; renderPane(); } });
+async function doClozeFresh() {
+  const i = S.idx, n = note(i); S.busy[i + "cloze"] = true; n.clozeErr = ""; renderPane();
+  try {
+    const prev = n.cloze ? n.cloze.words.map(x => x.w).join("、") : "";
+    const r = await sample.json(`${RULES()}\n\n請從下面這段原文挑出「另一批」值得挖空背誦的關鍵詞（盡量避開上一批：${prev}）。\n${ctx(i)}\n\n規則：每個詞必須是原文中一字不差、連續出現的字串，2～12 字；挑專有名詞、定義核心詞、數字、條件或結論；詞與詞不可重疊；依重要性排列，8～15 個；hint 是不洩漏答案的提示，10 字以內。\n只回覆 JSON 陣列：[{"w":"關鍵詞","hint":"提示"}]`, { cache: false });
+    if (!Array.isArray(r)) throw { code: "invalid_json" };
+    const old = n.cloze; setCloze(i, r, "ai");
+    if (!n.cloze.words.length) { n.cloze = old; throw { code: "invalid_json" }; }
+    Saver.schedule();
+  } catch (e) { n.clozeErr = errText(e); }
+  S.busy[i + "cloze"] = false; if (i === S.idx) renderPane();
+}
+$("#tabs").addEventListener("click", e => { const b = e.target.closest("button"); if (b) selectTab(b.dataset.tab); });
+$("#askForm").addEventListener("submit", e => {
+  e.preventDefault(); const q = $("#askBox").value.trim(); if (!q || S.busy.chat) return;
+  if ($("#autoSpeak").checked) warmUp();
+  $("#askBox").value = ""; converse(q); renderChips();
+});
+$("#askBox").addEventListener("keydown", e => { if (e.key === "Enter" && !e.shiftKey && !e.isComposing) { e.preventDefault(); $("#askForm").requestSubmit(); } });
+$("#stopBtn").addEventListener("click", () => { if (activeCtl) activeCtl.abort(); TTS.stop(); });
+$("#readBtn").addEventListener("click", () => { if (TTS.owner && TTS.owner.id === "read") TTS.stop(); else readOriginal(); });
+$("#guideBtn").addEventListener("click", () => { if (!TTS.ok) { speechHelp("unsupported"); return; } warmUp(); guideSection(); });
+$("#prev").addEventListener("click", () => go(S.idx - 1));
+$("#next").addEventListener("click", () => go(S.idx + 1));
+$("#secSel").addEventListener("change", e => go(+e.target.value));
+$("#file").addEventListener("change", e => { const f = e.target.files[0]; if (f) openFile(f); e.target.value = ""; });
+$("#pasteBtn").addEventListener("click", () => { $("#pastePanel").hidden = false; $("#pasteText").focus(); });
+$("#pasteCancel").addEventListener("click", () => { $("#pastePanel").hidden = true; });
+$("#pasteGo").addEventListener("click", () => {
+  const t = $("#pasteText").value.trim(); if (!t) { $("#pasteText").focus(); return; }
+  $("#pastePanel").hidden = true;
+  loadDoc({ title: $("#pasteTitle").value.trim() || firstLine(t, 18), kind: "貼上的文字", sections: chunkText(t) });
+  $("#pasteText").value = ""; $("#pasteTitle").value = "";
+});
+let dragDepth = 0;
+addEventListener("dragenter", e => { if ([...((e.dataTransfer && e.dataTransfer.types) || [])].includes("Files")) { dragDepth++; document.body.classList.add("dragging"); } });
+addEventListener("dragleave", () => { if (--dragDepth <= 0) { dragDepth = 0; document.body.classList.remove("dragging"); } });
+addEventListener("dragover", e => e.preventDefault());
+addEventListener("drop", e => { e.preventDefault(); dragDepth = 0; document.body.classList.remove("dragging"); const f = e.dataTransfer.files[0]; if (f) openFile(f); });
+addEventListener("pagehide", () => { try { speechSynthesis.cancel(); } catch (e) {} });
+
+
+/* ---------- learning progress: cloud (private per person) with on-device fallback ---------- */
+const Cloud = { db: null, uid: null, mode: "pending" }; // mode: pending | cloud | local
+let storeReady = null;
+function setSync(st, msg) {
+  const el = $("#sync");
+  const map = {
+    pending: "☁ 正在連線雲端…",
+    ok: "☁ 進度已同步到雲端",
+    saving: "☁ 儲存中…",
+    local: "💾 進度只存在這台裝置",
+    err: "⚠ 進度沒有存成功" + (msg ? "：" + msg : ""),
+    sample: Cloud.mode === "cloud" ? "☁ 雲端進度已啟用" : Cloud.mode === "local" ? "💾 進度只存在這台裝置" : "☁ 正在連線雲端…"
+  };
+  el.textContent = map[st] || "";
+  el.dataset.state = st;
+}
+async function initStore() {
+  try {
+    if (false) {
+      const [db, user] = await Promise.all([window.claude.use("db"), window.claude.use("user")]);
+      if (db && user) { const id = await user.id(); if (id) { Cloud.db = db; Cloud.uid = id; Cloud.mode = "cloud"; } }
+    }
+  } catch (e) {}
+  if (Cloud.mode !== "cloud") Cloud.mode = "local";
+  setSync(S.book ? (Cloud.mode === "cloud" ? "ok" : "local") : "sample");
+}
+const clone = o => JSON.parse(JSON.stringify(o));
+const booksCol = () => Cloud.db.doc(`data/users/${Cloud.uid}/library`).collection("books");
+const settingsDoc = () => Cloud.db.doc(`data/users/${Cloud.uid}/settings`);
+async function retryOnce(fn) {
+  try { return await fn(); }
+  catch (e) { if (e && e.code === "unavailable") { await new Promise(r => setTimeout(r, 600 + Math.random() * 600)); return fn(); } throw e; }
+}
+const localIndex = { get() { try { return JSON.parse(store.get("bookIndex", "[]")); } catch (e) { return []; } }, set(a) { store.set("bookIndex", JSON.stringify(a)); } };
+const Store = {
+  async getBook(id) {
+    await storeReady;
+    if (Cloud.mode === "cloud") { const s = await retryOnce(() => booksCol().doc(id).get()); return s.exists ? clone(s.data()) : null; }
+    const v = store.get("book." + id, null); try { return v ? JSON.parse(v) : null; } catch (e) { return null; }
+  },
+  async saveBook(id, data) {
+    await storeReady;
+    if (Cloud.mode === "cloud") return retryOnce(() => booksCol().doc(id).set(data));
+    store.set("book." + id, JSON.stringify(data));
+    const idx = localIndex.get(); if (!idx.includes(id)) { idx.push(id); localIndex.set(idx); }
+  },
+  async listBooks() {
+    await storeReady;
+    if (Cloud.mode === "cloud") { const q = await retryOnce(() => booksCol().orderBy("updatedAt", "desc").limit(200).get()); return q.docs.map(d => ({ id: d.id, ...clone(d.data()) })); }
+    return localIndex.get().map(id => { try { return { id, ...JSON.parse(store.get("book." + id, "null")) }; } catch (e) { return null; } }).filter(b => b && b.title).sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0));
+  },
+  async deleteBook(id) {
+    await storeReady;
+    if (Cloud.mode === "cloud") return retryOnce(() => booksCol().doc(id).delete());
+    try { localStorage.removeItem("shuban.book." + id); } catch (e) {}
+    localIndex.set(localIndex.get().filter(x => x !== id));
+  },
+  async getSettings() {
+    await storeReady;
+    if (Cloud.mode !== "cloud") return null;
+    const s = await retryOnce(() => settingsDoc().get()); return s.exists ? clone(s.data()) : null;
+  },
+  async saveSettings(o) { await storeReady; if (Cloud.mode === "cloud") return retryOnce(() => settingsDoc().set(o)); }
+};
+
+/* stable id for a document, from its content (same file on any computer → same id) */
+function fingerprint(doc) {
+  const total = doc.sections.reduce((a, s) => a + s.text.length, 0);
+  let src = doc.sections.length + "|" + total + "|" + doc.sections.slice(0, 4).map(s => s.text.slice(0, 600)).join("|");
+  if (total < 80) src += "|" + doc.title;
+  const h = seed => { let x = seed >>> 0; for (let i = 0; i < src.length; i++) { x ^= src.charCodeAt(i); x = Math.imul(x, 16777619) >>> 0; } return x.toString(16).padStart(8, "0"); };
+  return "b" + h(2166136261) + h(0x9747b28c);
+}
+
+/* per-section progress */
+const P = i => (S.prog[i] ||= {});
+function doneCount() { return S.doc ? S.doc.sections.reduce((a, _, i) => a + (S.prog[i] && S.prog[i].done ? 1 : 0), 0) : 0; }
+function renderTrack() {
+  const t = $("#track"); if (!S.doc) return;
+  if (!S.book) { t.innerHTML = `<span class="why">${S.doc.sample ? "範例文件不記錄進度。開啟你自己的文件後，書伴會記住讀到哪裡。" : "這份文件的紀錄已刪除；重新開啟檔案就會重新開始記錄。"}</span>`; return; }
+  const n = S.doc.sections.length, d = doneCount(), p = P(S.idx);
+  const rv = S.doc.sections.reduce((a, _, i) => a + (S.prog[i] && S.prog[i].review ? 1 : 0), 0);
+  t.innerHTML = `<span class="count">已完成 <b>${d}</b> / ${n} 段（${Math.round(d / n * 100)}%）${rv ? `・⭐ ${rv} 段待複習` : ""}</span>
+    <button class="btn small ${p.done ? "on" : ""}" type="button" id="markDone">${p.done ? "✓ 本段已讀完" : "標記本段讀完"}</button>
+    <button class="btn small ${p.review ? "on" : ""}" type="button" id="markReview">${p.review ? "⭐ 考前複習" : "☆ 加入考前複習"}</button>`;
+}
+function refreshSelectLabels() {
+  if (!S.doc) return;
+  [...$("#secSel").options].forEach((o, i) => { const p = S.prog[i] || {}; o.textContent = `${p.done ? "✓ " : ""}${p.review ? "⭐ " : ""}${i + 1}. ${S.doc.sections[i].title}`; });
+}
+function afterProgress() { renderTrack(); refreshSelectLabels(); Saver.schedule(); }
+function markDone(i, v = true) { if (!S.book) return; P(i).done = v; if (v) P(i).doneAt = Date.now(); afterProgress(); }
+$("#track").addEventListener("click", e => {
+  const b = e.target.closest("button"); if (!b || !S.book) return;
+  if (b.id === "markDone") markDone(S.idx, !P(S.idx).done);
+  if (b.id === "markReview") { P(S.idx).review = !P(S.idx).review; afterProgress(); }
+});
+function recordQuiz(i) {
+  const n = note(i); if (!S.book || !n.quiz) return;
+  const done = n.quiz.filter(q => q.picked !== null); if (done.length !== n.quiz.length) return;
+  const right = done.filter(q => q.picked === q.answer).length;
+  const p = P(i); const prev = p.quiz;
+  p.quiz = { right, total: n.quiz.length, best: Math.max(right, prev ? prev.best || prev.right || 0 : 0), at: Date.now() };
+  if (right === n.quiz.length) p.done = true; else p.review = true;
+  afterProgress();
+}
+
+/* what gets saved: progress + notes; never the original document text */
+function snapshotBook() {
+  const b = S.book, notes = {}, explain = {}, cloze = {};
+  for (const [k, n] of Object.entries(S.notes)) {
+    if (n.points && !n.points.example) notes[k] = n.points;
+    if (n.explain && !S.busy[k + "explain"]) explain[k] = n.explain.slice(0, 3000);
+    if (n.cloze && n.cloze.words.length) cloze[k] = { words: n.cloze.words, forgot: n.cloze.forgot, src: n.cloze.src };
+  }
+  let chat = S.chat.filter(m => !m.local && !m.pending && (m.role === "divider" || (m.content || "").trim()))
+    .map(m => ({ role: m.role, content: String(m.content).slice(0, 2500), ...(m.realContent && m.realContent !== m.content ? { real: m.realContent.slice(0, 1500) } : {}), sec: m.sec ?? null }))
+    .slice(-40);
+  const data = {
+    title: S.doc.title, kind: S.doc.kind, sections: S.doc.sections.length, lastIdx: S.idx,
+    createdAt: b.createdAt, updatedAt: Date.now(), prog: S.prog, points: notes, explain, cloze,
+    overview: S.overview && !S.busy.overview ? S.overview.slice(0, 6000) : "", chat
+  };
+  // stay well under the 256 KiB document cap
+  const size = () => new Blob([JSON.stringify(data)]).size;
+  while (size() > 230000 && data.chat.length) data.chat.splice(0, 5);
+  if (size() > 230000) data.explain = {};
+  if (size() > 230000) data.cloze = {};
+  if (size() > 230000) data.points = {};
+  return data;
+}
+const Saver = {
+  timer: null, running: false, again: false,
+  schedule() { if (!S.book) return; clearTimeout(this.timer); setSync("saving"); this.timer = setTimeout(() => this.flush(), 1200); },
+  async flush() {
+    clearTimeout(this.timer);
+    if (!S.book) return;
+    if (this.running) { this.again = true; return; }
+    this.running = true;
+    try { await Store.saveBook(S.book.id, snapshotBook()); setSync(Cloud.mode === "cloud" ? "ok" : "local"); }
+    catch (e) { setSync("err", e && e.code === "quota_exceeded" ? "雲端空間已滿，請到書架刪除不需要的紀錄" : "請檢查網路，稍後會再試"); }
+    this.running = false;
+    if (this.again) { this.again = false; this.flush(); }
+  }
+};
+document.addEventListener("visibilitychange", () => { if (document.visibilityState === "hidden" && Saver.timer) Saver.flush(); });
+
+/* reopen: restore what was saved for this document */
+async function restoreBook(doc) {
+  const id = fingerprint(doc);
+  S.book = { id, createdAt: Date.now() };
+  renderTrack();
+  let b = null;
+  try { b = await Store.getBook(id); } catch (e) { setSync("err", "讀不到之前的進度"); }
+  if (S.doc !== doc) return;
+  if (!b) { Saver.schedule(); return; }
+  S.book.createdAt = b.createdAt || Date.now();
+  S.prog = b.prog || {};
+  for (const [k, p] of Object.entries(b.points || {})) note(+k).points = p;
+  for (const [k, x] of Object.entries(b.explain || {})) note(+k).explain = x;
+  for (const [k, x] of Object.entries(b.cloze || {})) if (x && Array.isArray(x.words)) note(+k).cloze = { words: x.words, forgot: x.forgot || [], src: x.src, st: {} };
+  S.overview = b.overview || null;
+  const old = (b.chat || []).map(m => ({ role: m.role, content: m.content, realContent: m.real || m.content, sec: m.sec }));
+  const n = doc.sections.length, last = Math.min(b.lastIdx || 0, n - 1), d = doneCount();
+  const rv = Object.values(S.prog).filter(p => p.review).length;
+  S.chat = [...old, ...(old.length ? [{ role: "divider", content: `今天 ${new Date().toLocaleDateString("zh-TW")} 繼續讀` }] : []), { role: "assistant", local: true,
+    content: `歡迎回來！👋\n\n《${doc.title}》上次讀到**第 ${last + 1} 段**，已完成 **${d} / ${n} 段**（${Math.round(d / n * 100)}%）。${rv ? `\n\n有 **${rv} 段**標記為考前複習，左邊段落選單裡有 ⭐ 的就是。` : ""}\n\n我已經翻到上次的位置了，要我先幫你**複習上一段的重點**，還是直接往下讀？` }];
+  S.idx = last; go(last, true);
+  refreshSelectLabels(); renderTrack(); renderPane(); renderChips();
+  setSync(Cloud.mode === "cloud" ? "ok" : "local");
+}
+
+/* settings follow the person across computers (voice stays per device: each device has its own voices) */
+const SETTING_KEYS = ["mode", "rate", "autoSpeak", "autoNext"];
+function readSettings() { return { mode: $("#mode").value, rate: $("#rate").value, autoSpeak: $("#autoSpeak").checked, autoNext: $("#autoNext").checked, updatedAt: Date.now() }; }
+let settingsBusy = Promise.resolve();
+function saveSettings() { settingsBusy = settingsBusy.then(() => Store.saveSettings(readSettings())).catch(() => {}); }
+SETTING_KEYS.forEach(k => $("#" + k).addEventListener("change", saveSettings));
+async function applyCloudSettings() {
+  let s = null; try { s = await Store.getSettings(); } catch (e) {}
+  if (!s) return;
+  if (s.mode) { $("#mode").value = s.mode; store.set("mode", s.mode); }
+  if (s.rate) { $("#rate").value = s.rate; if (!$("#rate").value) $("#rate").value = "1"; $("#rate2").value = $("#rate").value; store.set("rate", $("#rate").value); }
+  if (typeof s.autoSpeak === "boolean") { $("#autoSpeak").checked = s.autoSpeak; store.set("autoSpeak", s.autoSpeak ? "1" : "0"); }
+  if (typeof s.autoNext === "boolean") { $("#autoNext").checked = s.autoNext; store.set("autoNext", s.autoNext ? "1" : "0"); }
+}
+
+/* bookshelf */
+let pendingDelete = null;
+/* built-in lectures published with the page */
+const LIBRARY = [];
+async function openLibrary(k) {
+  const item = LIBRARY[k]; if (!item) return;
+  $("#shelf").hidden = true;
+  const body = $("#readerBody");
+  body.innerHTML = `<div class="status"><span class="spin"></span>正在打開「${esc(item.title)}」…</div>`;
+  try {
+    const res = await fetch(item.file);
+    if (!res.ok) throw new Error(String(res.status));
+    const text = await res.text();
+    loadDoc({ title: item.title, kind: "內建講義", sections: chunkText(text) });
+  } catch (e) {
+    body.innerHTML = `<div class="drop"><p class="err">講義打不開，請檢查網路後再按一次「📘 iPAS 講義」。</p></div>`;
+  }
+}
+function renderLib() {
+  if (!LIBRARY.length) { $("#libList").innerHTML = ""; return; }
+  $("#libList").innerHTML = `<div class="label"><span>📘 已放在伴讀機裡的講義（不用上傳，直接讀）</span></div><div class="libgrid">` + LIBRARY.map((it, k) => `<article class="book"><div class="book-main"><h3>${esc(it.title)}</h3><div class="why">${esc(it.desc)}</div></div><div class="book-act"><button class="btn small primary" type="button" data-lib="${k}">開始讀</button></div></article>`).join("") + `</div><div class="label"><span>📚 我讀過的文件</span></div>`;
+}
+$("#libList").addEventListener("click", e => { const b = e.target.closest("[data-lib]"); if (b) openLibrary(+b.dataset.lib); });
+
+async function openShelf() {
+  renderLib();
+  $("#shelf").hidden = false;
+  $("#shelfList").innerHTML = `<div class="status"><span class="spin"></span>正在讀取你的書架…</div>`;
+  $("#shelfNote").textContent = "";
+  let books = [];
+  try { books = await Store.listBooks(); } catch (e) { $("#shelfList").innerHTML = `<p class="err">讀不到書架，請檢查網路後再開一次。</p>`; return; }
+  $("#shelfNote").textContent = Cloud.mode === "cloud" ? "存在你帳號的私人空間，換電腦也看得到；只有你看得到。" : "目前只存在這台裝置的瀏覽器裡。";
+  if (!books.length) { $("#shelfList").innerHTML = `<div class="empty"><strong>書架還是空的</strong><span>開啟一份文件開始讀，書伴就會自動記下進度，下次在這裡接著讀。</span></div>`; return; }
+  $("#shelfList").innerHTML = books.map(b => {
+    const n = b.sections || 1, prog = b.prog || {};
+    const d = Object.entries(prog).filter(([, p]) => p.done).length;
+    const rv = Object.entries(prog).filter(([, p]) => p.review).map(([k]) => +k + 1).sort((a, c) => a - c);
+    const qz = Object.values(prog).filter(p => p.quiz);
+    const qr = qz.reduce((a, p) => a + p.quiz.right, 0), qt = qz.reduce((a, p) => a + p.quiz.total, 0);
+    const when = b.updatedAt ? new Date(b.updatedAt).toLocaleDateString("zh-TW", { month: "numeric", day: "numeric" }) : "—";
+    const pct = Math.round(d / n * 100);
+    return `<article class="book" data-id="${esc(b.id)}">
+      <div class="book-main">
+        <h3>${esc(b.title || "未命名文件")}</h3>
+        <div class="doc-meta"><span class="tag">${esc(b.kind || "")}</span><span>上次 ${when}・讀到第 ${(b.lastIdx || 0) + 1} 段</span>${qt ? `<span>測驗答對 ${qr}/${qt}</span>` : ""}</div>
+        <div class="bar"><i style="width:${pct}%"></i></div>
+        <div class="why">完成 ${d} / ${n} 段（${pct}%）${rv.length ? `・⭐ 待複習：第 ${rv.slice(0, 8).join("、")}${rv.length > 8 ? "…" : ""} 段` : ""}</div>
+      </div>
+      <div class="book-act">
+        <button class="btn small primary" type="button" data-cont="${esc(b.id)}" data-title="${esc(b.title || "")}">繼續讀</button>
+        <button class="btn small" type="button" data-del="${esc(b.id)}">${pendingDelete === b.id ? "確定刪除？" : "刪除紀錄"}</button>
+      </div></article>`;
+  }).join("");
+}
+$("#shelfBtn").addEventListener("click", () => { if ($("#shelf").hidden) openShelf(); else $("#shelf").hidden = true; });
+$("#shelfClose").addEventListener("click", () => { $("#shelf").hidden = true; });
+$("#shelfList").addEventListener("click", async e => {
+  const b = e.target.closest("button"); if (!b) return;
+  if (b.dataset.cont) {
+    if (S.book && S.book.id === b.dataset.cont) { $("#shelf").hidden = true; return; }
+    $("#shelfNote").textContent = `請選擇「${b.dataset.title}」這個檔案（或重新貼上同樣的文字），書伴會自動接上進度。`;
+    $("#file").click();
+  } else if (b.dataset.del) {
+    if (pendingDelete !== b.dataset.del) { pendingDelete = b.dataset.del; b.textContent = "確定刪除？"; return; }
+    b.disabled = true;
+    try { await Store.deleteBook(b.dataset.del); if (S.book && S.book.id === b.dataset.del) { clearTimeout(Saver.timer); S.book = null; S.prog = {}; renderTrack(); refreshSelectLabels(); } }
+    catch (err) { $("#shelfNote").textContent = "刪除失敗，請稍後再試。"; }
+    pendingDelete = null; openShelf();
+  }
+});
+
+/* ---------- install as an app ---------- */
+let installEvt = null;
+addEventListener("beforeinstallprompt", e => { e.preventDefault(); installEvt = e; $("#installBtn").hidden = false; });
+$("#installBtn").addEventListener("click", async () => { if (!installEvt) return; installEvt.prompt(); try { await installEvt.userChoice; } catch (e) {} installEvt = null; $("#installBtn").hidden = true; });
+addEventListener("appinstalled", () => { $("#installBtn").hidden = true; });
+{
+  const standalone = matchMedia("(display-mode: standalone)").matches || navigator.standalone === true;
+  const ios = /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+  if (ios && !standalone && store.get("iosTip", "") !== "seen") $("#iosTip").hidden = false;
+  $("#iosTipClose").addEventListener("click", () => { $("#iosTip").hidden = true; store.set("iosTip", "seen"); });
+}
+if ("serviceWorker" in navigator && location.protocol !== "file:") addEventListener("load", () => { navigator.serviceWorker.register("sw.js").catch(() => {}); });
+
+/* ---------- boot ---------- */
+setSync("pending");
+storeReady = initStore();
+storeReady.then(applyCloudSettings);
+loadDoc(SAMPLE);
+setAI("pending");
+aiPromise = (async () => {
+  sample = null;
+  setAI(sample ? "ready" : "off");
+  renderPane();
+})();
+
+
+/* ---------- timers: pomodoro, mock exam, custom countdown, exam-day countdown ---------- */
+const TM = (() => {
+  const pad = n => String(n).padStart(2, "0");
+  const fmt = ms => { const s = Math.max(0, Math.ceil(ms / 1000)); const h = Math.floor(s / 3600), m = Math.floor(s % 3600 / 60), x = s % 60; return h ? `${h}:${pad(m)}:${pad(x)}` : `${pad(m)}:${pad(x)}`; };
+  const todayKey = (d = new Date()) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+  const PHASE = { focus: "專心讀書", break: "短休息", long: "長休息", exam: "模擬考作答中", custom: "倒數中" };
+  let T = null;            // running/paused timer
+  let data = { exams: [], days: {} }; // saved: exam dates + focus minutes per day
+  let tick = null, wake = null, audio = null, warned = {};
+  try { T = JSON.parse(store.get("timer", "null")); } catch (e) { T = null; }
+  const saveT = () => store.set("timer", JSON.stringify(T));
+
+  /* ---- storage for exam dates and study minutes (private cloud, else this device) ---- */
+  const tdoc = () => Cloud.db.doc(`data/users/${Cloud.uid}/timer`);
+  async function loadData() {
+    await storeReady;
+    try {
+      if (Cloud.mode === "cloud") { const s = await retryOnce(() => tdoc().get()); if (s.exists) data = clone(s.data()); }
+      else { const v = store.get("timerData", ""); if (v) data = JSON.parse(v); }
+    } catch (e) {}
+    data.exams = Array.isArray(data.exams) ? data.exams : []; data.days = data.days || {};
+    renderStrip(); renderPanel();
+  }
+  let saving = Promise.resolve();
+  function saveData() {
+    // keep about four months of daily minutes
+    const keys = Object.keys(data.days).sort(); while (keys.length > 120) delete data.days[keys.shift()];
+    saving = saving.then(async () => {
+      if (Cloud.mode === "cloud") await retryOnce(() => tdoc().set(data)); else store.set("timerData", JSON.stringify(data));
+    }).catch(() => { $("#tmNote").textContent = "⚠ 計時紀錄沒有存成功，請檢查網路。"; });
+  }
+  function logMinutes(min) { if (min < 1) return; const k = todayKey(); data.days[k] = (data.days[k] || 0) + Math.round(min); saveData(); }
+
+  /* ---- sound and voice alerts ---- */
+  function beep(times = 3) {
+    try {
+      audio = audio || new (window.AudioContext || window.webkitAudioContext)();
+      if (audio.state === "suspended") audio.resume();
+      for (let i = 0; i < times; i++) {
+        const o = audio.createOscillator(), g = audio.createGain(), t = audio.currentTime + i * 0.45;
+        o.type = "sine"; o.frequency.value = i % 2 ? 660 : 880;
+        g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.35, t + 0.03); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.35);
+        o.connect(g).connect(audio.destination); o.start(t); o.stop(t + 0.4);
+      }
+    } catch (e) {}
+  }
+  function say(text) {
+    if (!$("#tmVoice").checked || !TTS.ok || TTS.owner) return; // never talk over a reading in progress
+    try { const u = new SpeechSynthesisUtterance(text); const v = TTS.pickVoice("zh"); if (v) { u.voice = v; u.lang = v.lang; } else u.lang = "zh-TW"; speechSynthesis.speak(u); } catch (e) {}
+  }
+  function alertUser(msg, spoken, times) {
+    beep(times); say(spoken || msg);
+    const pill = $("#timerPill"); pill.classList.add("ring"); setTimeout(() => pill.classList.remove("ring"), 4000);
+    $("#tmMsg").textContent = msg; $("#tmMsg").hidden = false;
+    document.title = "⏰ " + msg;
+    setTimeout(() => { document.title = "書伴陪讀"; }, 15000);
+  }
+  async function keepAwake(on) {
+    try {
+      if (on && !wake && navigator.wakeLock) { wake = await navigator.wakeLock.request("screen"); wake.addEventListener("release", () => { wake = null; }); }
+      if (!on && wake) { await wake.release(); wake = null; }
+    } catch (e) { wake = null; }
+  }
+  document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible" && T && T.running) keepAwake(true); });
+
+  /* ---- timer engine (based on the end time, so it stays right even when the tab sleeps) ---- */
+  const val = (id, d) => { const el = $(id); const n = parseFloat(el ? el.value : store.get(id.slice(1), "")); return isFinite(n) && n > 0 ? n : d; };
+  function start(mode, phase, minutes, extra = {}) {
+    T = { mode, phase, total: minutes * 60000, endAt: Date.now() + minutes * 60000, remain: null, running: true, round: extra.round || (T && T.mode === mode ? T.round : 0) || 0, qs: extra.qs || 0, startedAt: Date.now() };
+    warned = {}; $("#tmMsg").hidden = true; saveT(); run(); keepAwake(true);
+  }
+  function pause() { if (!T || !T.running) return; T.remain = T.endAt - Date.now(); T.running = false; saveT(); stopTick(); keepAwake(false); paint(); }
+  function resume() { if (!T || T.running) return; T.endAt = Date.now() + T.remain; T.remain = null; T.running = true; saveT(); run(); keepAwake(true); }
+  function reset() {
+    if (T && T.mode === "pomo" && T.phase === "focus") logMinutes((T.total - left()) / 60000 * 0.999); // keep the minutes already studied
+    T = null; saveT(); stopTick(); keepAwake(false); $("#tmMsg").hidden = true; paint();
+  }
+  const left = () => !T ? 0 : T.running ? T.endAt - Date.now() : T.remain;
+  function run() { stopTick(); tick = setInterval(step, 250); step(); }
+  function stopTick() { clearInterval(tick); tick = null; }
+  function step() {
+    if (!T) return;
+    const l = left();
+    if (T.mode === "exam" && T.running) {
+      for (const m of [10, 5]) if (l <= m * 60000 && T.total > m * 60000 * 2 && !warned[m]) { warned[m] = true; alertUser(`模擬考剩 ${m} 分鐘`, `還剩 ${m} 分鐘，請檢查答案。`, 1); }
+    }
+    if (l <= 0 && T.running) { finish(); return; }
+    paint();
+  }
+  function finish() {
+    const done = T; stopTick();
+    if (done.mode === "pomo") {
+      if (done.phase === "focus") {
+        logMinutes(done.total / 60000);
+        const round = (done.round || 0) + 1, long = round % 4 === 0;
+        alertUser(long ? `完成第 ${round} 輪！休息 ${val("#tmLong", 15)} 分鐘` : `完成第 ${round} 輪！休息 ${val("#tmBreak", 5)} 分鐘`, long ? "辛苦了，完成四輪，好好休息一下。" : "時間到，起來動一動，休息一下。");
+        start("pomo", long ? "long" : "break", long ? val("#tmLong", 15) : val("#tmBreak", 5), { round });
+        return;
+      }
+      alertUser("休息結束，準備好就按「開始專心」", "休息結束，準備開始下一輪。");
+      T = { mode: "pomo", phase: "focus", total: val("#tmFocus", 25) * 60000, endAt: 0, remain: val("#tmFocus", 25) * 60000, running: false, round: done.round || 0 };
+      saveT(); keepAwake(false); paint(); return;
+    }
+    if (done.mode === "exam") { logMinutes(done.total / 60000); alertUser("模擬考時間到，請停筆！", "時間到，請停筆。", 5); }
+    else alertUser("倒數時間到！", "時間到。", 4);
+    T = null; saveT(); keepAwake(false); paint();
+  }
+
+  /* ---- drawing ---- */
+  function paint() {
+    const pill = $("#timerPill"), big = $("#tmBig"), ring = $("#tmRing"), lbl = $("#tmPhase");
+    if (!T) {
+      pill.hidden = true;
+      if (big) { big.textContent = fmt(curMode === "pomo" ? val("#tmFocus", 25) * 60000 : curMode === "exam" ? val("#tmExamMin", 60) * 60000 : val("#tmCustom", 10) * 60000); ring.style.strokeDashoffset = 0; lbl.textContent = "還沒開始"; }
+      paintButtons(); return;
+    }
+    const l = Math.max(0, left()), frac = T.total ? l / T.total : 0;
+    pill.hidden = false;
+    pill.textContent = `${T.phase === "focus" ? "🍅" : T.phase === "exam" ? "📝" : T.phase === "custom" ? "⏲" : "☕"} ${fmt(l)}${T.running ? "" : " ⏸"}`;
+    pill.classList.toggle("rest", T.phase === "break" || T.phase === "long");
+    if (big) {
+      big.textContent = fmt(l);
+      ring.style.strokeDashoffset = String(2 * Math.PI * 54 * (1 - frac));
+      let sub = PHASE[T.phase] + (T.running ? "" : "（暫停）");
+      if (T.mode === "pomo") sub += `・第 ${(T.round || 0) + (T.phase === "focus" ? 1 : 0)} 輪`;
+      if (T.mode === "exam" && T.qs) { const used = (T.total - l) / 60000; sub += `・每題約 ${(T.total / 60000 / T.qs).toFixed(1)} 分鐘，已用 ${Math.floor(used)} 分`; }
+      lbl.textContent = sub;
+    }
+    paintButtons();
+  }
+  function paintButtons() {
+    const b = $("#tmStart"); if (!b) return;
+    const mine = T && T.mode === curMode;
+    b.textContent = !mine ? (curMode === "pomo" ? "▶ 開始專心" : curMode === "exam" ? "▶ 開始模擬考" : "▶ 開始倒數") : T.running ? "⏸ 暫停" : (T.endAt ? "▶ 繼續" : "▶ 開始專心");
+    $("#tmReset").disabled = !T;
+    $("#tmSkip").hidden = !(mine && T.mode === "pomo");
+    const other = T && !mine; $("#tmOther").hidden = !other;
+    if (other) $("#tmOther").textContent = `目前「${{ pomo: "番茄鐘", exam: "模擬考", custom: "自訂倒數" }[T.mode]}」正在計時，按開始會取代它。`;
+  }
+
+  /* ---- exam-day countdown ---- */
+  function daysTo(dateStr) { const [y, m, d] = dateStr.split("-").map(Number); const a = new Date(y, m - 1, d), now = new Date(); const b = new Date(now.getFullYear(), now.getMonth(), now.getDate()); return Math.round((a - b) / 86400000); }
+  function renderStrip() {
+    const up = data.exams.filter(e => daysTo(e.date) >= 0).sort((a, b) => a.date.localeCompare(b.date));
+    const el = $("#examStrip");
+    if (!up.length) { el.hidden = true; return; }
+    el.hidden = false;
+    el.innerHTML = up.slice(0, 3).map(e => { const d = daysTo(e.date); return `<span class="ex">📅 ${esc(e.name)}：${d === 0 ? "<b>就是今天，加油！</b>" : `還有 <b>${d}</b> 天`}<small>（${esc(e.date.slice(5).replace("-", "/"))}）</small></span>`; }).join("");
+  }
+  function statsHtml() {
+    const k = todayKey(), today = data.days[k] || 0;
+    let week = 0; const d = new Date(); for (let i = 0; i < 7; i++) { week += data.days[todayKey(d)] || 0; d.setDate(d.getDate() - 1); }
+    let streak = 0; const s = new Date(); if (!data.days[todayKey(s)]) s.setDate(s.getDate() - 1); while (data.days[todayKey(s)]) { streak++; s.setDate(s.getDate() - 1); }
+    return `今天專心 <b>${today}</b> 分鐘・近 7 天 <b>${week}</b> 分鐘${streak > 1 ? `・連續 <b>${streak}</b> 天有讀書 🔥` : ""}`;
+  }
+
+  /* ---- panel ---- */
+  let curMode = store.get("timerMode", T ? T.mode : "pomo");
+  function renderPanel() {
+    const p = $("#timerBody"); if (!p || $("#timerPanel").hidden) return;
+    document.querySelectorAll("#tmTabs button").forEach(b => b.setAttribute("aria-selected", b.dataset.m === curMode));
+    let h = "";
+    if (curMode === "dates") {
+      const list = [...data.exams].sort((a, b) => a.date.localeCompare(b.date));
+      h = `<div class="tm-form"><label for="exName">考試名稱</label><input id="exName" type="text" maxlength="30" placeholder="例如：iPAS AI 應用規劃師中級">
+        <label for="exDate">考試日期</label><input id="exDate" type="date"><button class="btn small primary" type="button" id="exAdd">加入倒數</button></div>
+        <p class="why">加入後，頁面最上方會一直顯示「距離考試還有幾天」，電腦和手機同步。</p>
+        ${list.length ? `<ul class="exlist">${list.map(e => { const d = daysTo(e.date); return `<li class="${d < 0 ? "past" : ""}"><span><b>${esc(e.name)}</b>　${esc(e.date)}</span><span>${d < 0 ? "已結束" : d === 0 ? "今天" : `還有 ${d} 天`}</span><button class="icon-btn" type="button" data-exdel="${esc(e.name)}|${esc(e.date)}">刪除</button></li>`; }).join("")}</ul>` : `<p class="why">還沒有加入任何考試。</p>`}`;
+    } else {
+      const set = curMode === "pomo"
+        ? `<label for="tmFocus">專心</label><input id="tmFocus" type="number" min="1" max="180" value="${esc(store.get("tmFocus", "25"))}"><span>分</span>
+           <label for="tmBreak">短休息</label><input id="tmBreak" type="number" min="1" max="60" value="${esc(store.get("tmBreak", "5"))}"><span>分</span>
+           <label for="tmLong">每 4 輪長休息</label><input id="tmLong" type="number" min="1" max="90" value="${esc(store.get("tmLong", "15"))}"><span>分</span>`
+        : curMode === "exam"
+        ? `<label for="tmExamMin">考試時間</label><input id="tmExamMin" type="number" min="1" max="300" value="${esc(store.get("tmExamMin", "60"))}"><span>分</span>
+           <label for="tmQs">題數（可不填）</label><input id="tmQs" type="number" min="0" max="300" value="${esc(store.get("tmQs", ""))}"><span>題</span>`
+        : `<label for="tmCustom">倒數</label><input id="tmCustom" type="number" min="1" max="600" value="${esc(store.get("tmCustom", "10"))}"><span>分</span>
+           <span class="chips">${[5, 10, 15, 30, 45, 60].map(m => `<button class="btn small" type="button" data-quick="${m}">${m} 分</button>`).join("")}</span>`;
+      const hint = curMode === "pomo" ? "讀 25 分鐘、休息 5 分鐘輪流；每完成 4 輪休息久一點。專心的時間會記進讀書紀錄。"
+        : curMode === "exam" ? "請依各考試簡章填寫實際作答時間。剩 10 分鐘和 5 分鐘時會提醒，時間到會提醒停筆。可以搭配「考考我」或紙本試題練習。"
+        : "設定幾分鐘，時間到就提醒你。";
+      h = `<div class="tm-main">
+          <div class="dial"><svg viewBox="0 0 120 120" aria-hidden="true"><circle cx="60" cy="60" r="54" class="track"></circle><circle cx="60" cy="60" r="54" class="prog" id="tmRing"></circle></svg>
+            <div class="dial-in"><div class="big" id="tmBig">--:--</div><div class="phase" id="tmPhase"></div></div></div>
+          <div class="tm-side">
+            <div class="tm-set">${set}</div>
+            <div class="row"><button class="btn primary" type="button" id="tmStart">▶ 開始</button><button class="btn" type="button" id="tmReset">↺ 重設</button><button class="btn" type="button" id="tmSkip" hidden>⏭ 跳過這階段</button></div>
+            <p class="why" id="tmOther" hidden></p>
+            <p class="why">${hint}</p>
+          </div></div>`;
+    }
+    h += `<div class="tm-foot"><span id="tmStats">${statsHtml()}</span><label for="tmVoice"><input type="checkbox" id="tmVoice" ${store.get("tmVoice", "1") === "1" ? "checked" : ""}> 時間到用語音提醒</label></div>`;
+    p.innerHTML = h;
+    $("#tmVoice").addEventListener("change", e => store.set("tmVoice", e.target.checked ? "1" : "0"));
+    paint();
+  }
+  $("#timerBtn").addEventListener("click", () => { const pnl = $("#timerPanel"); pnl.hidden = !pnl.hidden; if (!pnl.hidden) { renderPanel(); pnl.scrollIntoView({ block: "nearest", behavior: "smooth" }); } });
+  $("#timerClose").addEventListener("click", () => { $("#timerPanel").hidden = true; });
+  $("#timerPill").addEventListener("click", () => { if (T) curMode = T.mode; $("#timerPanel").hidden = false; renderPanel(); $("#timerPanel").scrollIntoView({ block: "start", behavior: "smooth" }); });
+  $("#tmTabs").addEventListener("click", e => { const b = e.target.closest("button"); if (!b) return; curMode = b.dataset.m; store.set("timerMode", curMode); renderPanel(); });
+  $("#timerBody").addEventListener("input", e => { const id = e.target.id; if (["tmFocus", "tmBreak", "tmLong", "tmExamMin", "tmQs", "tmCustom"].includes(id)) { store.set(id, e.target.value); if (!T) paint(); } });
+  $("#timerBody").addEventListener("click", e => {
+    const b = e.target.closest("button"); if (!b) return;
+    if (b.dataset.quick) { $("#tmCustom").value = b.dataset.quick; store.set("tmCustom", b.dataset.quick); start("custom", "custom", +b.dataset.quick); return; }
+    if (b.dataset.exdel) { const [n, d] = b.dataset.exdel.split("|"); data.exams = data.exams.filter(x => !(x.name === n && x.date === d)); saveData(); renderStrip(); renderPanel(); return; }
+    if (b.id === "exAdd") {
+      const n = $("#exName").value.trim(), d = $("#exDate").value;
+      if (!n || !/^\d{4}-\d{2}-\d{2}$/.test(d)) { $("#exName").focus(); $("#tmNote").textContent = "請填考試名稱和日期。"; return; }
+      data.exams.push({ name: n.slice(0, 30), date: d }); data.exams = data.exams.slice(-20); $("#tmNote").textContent = "";
+      saveData(); renderStrip(); renderPanel(); return;
+    }
+    beep(0); // unlock sound on this tap so the alarm can ring later
+    if (b.id === "tmStart") {
+      const mine = T && T.mode === curMode;
+      if (mine && T.running) pause();
+      else if (mine && !T.running && T.endAt) resume();
+      else if (curMode === "pomo") start("pomo", "focus", val("#tmFocus", 25), { round: mine ? T.round : 0 });
+      else if (curMode === "exam") start("exam", "exam", val("#tmExamMin", 60), { qs: Math.floor(val("#tmQs", 0)) });
+      else start("custom", "custom", val("#tmCustom", 10));
+    }
+    if (b.id === "tmReset") reset();
+    if (b.id === "tmSkip" && T) { if (T.phase === "focus") T.total = Math.max(0, T.total - left()); T.endAt = Date.now(); T.running = true; step(); }
+  });
+
+  // pick up a timer that was running before the page reloaded
+  if (T && T.running) { if (T.endAt <= Date.now()) { finish(); } else run(); } else paint();
+  storeReady.then(loadData);
+  setInterval(renderStrip, 60 * 60 * 1000);
+  return { paint };
+})();
+
+})();
+</script>
+
+
+
+</body>
+</html>
